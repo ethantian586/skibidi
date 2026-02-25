@@ -664,6 +664,10 @@
   // Replace with your deployed Modal URL after running: modal deploy modal_backend.py
   const API_BASE = "https://ethantian586--sprint-analyzer-web.modal.run";
 
+  // Set this to match the API_SECRET you created in Modal dashboard.
+  // Leave as empty string "" if you didn't set up a secret.
+  const API_KEY = "your-secret-here";
+
   // ── State ─────────────────────────────────────────────────
   let selectedFile = null;
   let jobId        = null;
@@ -753,7 +757,10 @@
     formData.append("file", selectedFile);
 
     try {
-      const res  = await fetch(`${API_BASE}/analyze`, { method: "POST", body: formData });
+      const headers = {};
+      if (API_KEY) headers["X-API-Key"] = "wasabidingus";
+
+      const res  = await fetch(`${API_BASE}/analyze`, { method: "POST", headers, body: formData });
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || "Upload failed");
 

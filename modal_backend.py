@@ -13,15 +13,16 @@ Deploy:
 
 Local dev:
     modal serve modal_backend.py
+
+Environment variables (set in Modal dashboard or via modal secret):
+    API_SECRET  — shared secret key; send as X-API-Key header from your frontend
+                  If not set, auth is skipped (handy for local dev).
+    ALLOWED_ORIGIN — your frontend URL e.g. https://your-app.vercel.app
+                     Defaults to * if not set.
 """
 
-import io
 import math
 import os
-import queue
-import tempfile
-import threading
-import time
 import uuid
 from pathlib import Path
 
@@ -37,11 +38,11 @@ gpu_image = (
     .apt_install("libgl1-mesa-glx", "libglib2.0-0")
     .pip_install(
         "ultralytics>=8.4.0",
-        #"opencv-python-headless",
         "numpy",
         "fastapi",
         "python-multipart",
         "uvicorn",
+        "slowapi",          # rate limiting
     )
     .pip_install("opencv-python-headless")
 )
@@ -51,7 +52,7 @@ volume = modal.Volume.from_name("sprint-analyzer-videos", create_if_missing=True
 VOLUME_PATH = Path("/videos")
 
 
-# ─── COCO-17 skeleton drawing (same as local script) ─────────────────────────
+# ─── COCO-17 skeleton drawing ─────────────────────────────────────────────────
 
 SKELETON = [
     (0, 1), (0, 2), (1, 3), (2, 4),
@@ -119,10 +120,10 @@ class KalmanKeypoint:
             [1, 0, 1, 0], [0, 1, 0, 1],
             [0, 0, 1, 0], [0, 0, 0, 1],
         ], dtype=np.float32)
-        self.kf.measurementMatrix  = np.array([[1,0,0,0],[0,1,0,0]], dtype=np.float32)
-        self.kf.processNoiseCov    = np.eye(4, dtype=np.float32) * 1e-2
-        self.kf.measurementNoiseCov= np.eye(2, dtype=np.float32) * 1e-1
-        self.kf.errorCovPost       = np.eye(4, dtype=np.float32)
+        self.kf.measurementMatrix   = np.array([[1,0,0,0],[0,1,0,0]], dtype=np.float32)
+        self.kf.processNoiseCov     = np.eye(4, dtype=np.float32) * 1e-2
+        self.kf.measurementNoiseCov = np.eye(2, dtype=np.float32) * 1e-1
+        self.kf.errorCovPost        = np.eye(4, dtype=np.float32)
         self.initialised = False
 
     def update(self, x, y):
@@ -167,9 +168,9 @@ class EMA:
             if v is None:
                 out[k] = self.state.get(k)
                 continue
-            prev          = self.state.get(k, v)
-            self.state[k] = (1 - self.alpha) * prev + self.alpha * v
-            out[k]        = self.state[k]
+            prev           = self.state.get(k, v)
+            self.state[k]  = (1 - self.alpha) * prev + self.alpha * v
+            out[k]         = self.state[k]
         return out
 
 
@@ -186,18 +187,18 @@ def draw_skeleton(frame, kpts, confs, min_conf=0.3):
         if confs[i] < min_conf:
             continue
         col = COL_LEFT if i in LEFT_KPT else (COL_RIGHT if i in RIGHT_KPT else COL_MID)
-        cv2.circle(frame, (int(x), int(y)), 6,  col,         -1, cv2.LINE_AA)
-        cv2.circle(frame, (int(x), int(y)), 7,  (20,20,20),   1, cv2.LINE_AA)
+        cv2.circle(frame, (int(x), int(y)), 6, col,        -1, cv2.LINE_AA)
+        cv2.circle(frame, (int(x), int(y)), 7, (20,20,20),  1, cv2.LINE_AA)
 
 
 def draw_hud(frame, angles):
     import cv2
-    x, y      = 15, 45
-    line_h    = 26
-    pad       = 10
-    panel_w   = 220
-    panel_h   = (len(angles) + 1) * line_h + 2 * pad
-    overlay   = frame.copy()
+    x, y     = 15, 45
+    line_h   = 26
+    pad      = 10
+    panel_w  = 220
+    panel_h  = (len(angles) + 1) * line_h + 2 * pad
+    overlay  = frame.copy()
     cv2.rectangle(overlay, (x, y), (x+panel_w, y+panel_h), (15,15,15), -1)
     cv2.addWeighted(overlay, 0.55, frame, 0.45, 0, frame)
     cv2.putText(frame, "JOINT ANGLES", (x+pad, y+pad+13),
@@ -225,16 +226,16 @@ def draw_title(frame, progress_pct):
 
 @app.function(
     image=gpu_image,
-    gpu="A10G",                        # 24 GB VRAM — handles 4K video comfortably
-    timeout=600,                        # 10 min max per video
+    gpu="A10G",
+    timeout=600,
     volumes={str(VOLUME_PATH): volume},
+    secrets=[modal.Secret.from_name("sprint-analyzer-secrets")],
     memory=4096,
 )
 def process_video(job_id: str):
     """
     Loads yolo26x-pose, runs tracking on the uploaded video,
     writes annotated output to the volume.
-    Updates a status file so the frontend can poll progress.
     """
     import cv2
     import numpy as np
@@ -250,7 +251,6 @@ def process_video(job_id: str):
 
     write_status("loading_model")
 
-    # yolo26x-pose — best accuracy, A10G handles it at 100+ fps
     model = YOLO("yolo26x-pose.pt")
 
     cap    = cv2.VideoCapture(str(input_path))
@@ -281,8 +281,8 @@ def process_video(job_id: str):
         persist=True,
         stream=True,
         verbose=False,
-        device=0,          # GPU 0
-        half=True,         # FP16 — 2x throughput on A10G
+        device=0,
+        half=True,
     )
 
     cap2 = cv2.VideoCapture(str(input_path))
@@ -347,46 +347,65 @@ def process_video(job_id: str):
     image=gpu_image,
     volumes={str(VOLUME_PATH): volume},
     memory=512,
-    allow_concurrent_inputs=20,
 )
+@modal.concurrent(max_inputs=20)
 @modal.asgi_app()
 def web():
-    import shutil
-
-    from fastapi import FastAPI, File, HTTPException, UploadFile
+    from fastapi import FastAPI, File, HTTPException, Request, UploadFile
     from fastapi.middleware.cors import CORSMiddleware
     from fastapi.responses import FileResponse, JSONResponse
-    from fastapi.staticfiles import StaticFiles
+    from slowapi import Limiter, _rate_limit_exceeded_handler
+    from slowapi.errors import RateLimitExceeded
+    from slowapi.util import get_remote_address
+
+    # ── Rate limiter (5 uploads per IP per hour) ──────────────────────────────
+    limiter = Limiter(key_func=get_remote_address, default_limits=["200/hour"])
 
     api = FastAPI(title="Sprint Analyzer API")
+    api.state.limiter = limiter
+    api.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+    # ── CORS — tighten ALLOWED_ORIGIN in production ───────────────────────────
+    allowed_origin = os.environ.get("ALLOWED_ORIGIN", "*")
     api.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=[allowed_origin],
         allow_methods=["*"],
         allow_headers=["*"],
     )
 
+    # ── Optional API key check ────────────────────────────────────────────────
+    API_SECRET = os.environ.get("API_SECRET")  # set in Modal dashboard
+
+    def check_api_key(request: Request):
+        """Raises 403 if API_SECRET is configured and the header doesn't match."""
+        if API_SECRET:
+            key = request.headers.get("X-API-Key", "")
+            if key != API_SECRET:
+                raise HTTPException(status_code=403, detail="Invalid or missing API key.")
+
+    # ── Routes ────────────────────────────────────────────────────────────────
+
     @api.post("/analyze")
-    async def analyze(file: UploadFile = File(...)):
-        # Validate file type
+    @limiter.limit("5/hour")
+    async def analyze(request: Request, file: UploadFile = File(...)):
+        check_api_key(request)
+
         if not file.filename.lower().endswith((".mp4", ".mov", ".avi", ".mkv")):
             raise HTTPException(400, "Please upload an MP4, MOV, AVI or MKV file.")
 
-        # Check file size (max 500 MB)
         contents = await file.read()
         if len(contents) > 500 * 1024 * 1024:
             raise HTTPException(400, "File too large. Max 500 MB.")
 
-        job_id   = str(uuid.uuid4())
-        job_dir  = VOLUME_PATH / job_id
+        job_id  = str(uuid.uuid4())
+        job_dir = VOLUME_PATH / job_id
         job_dir.mkdir(parents=True, exist_ok=True)
 
-        input_path = job_dir / "input.mp4"
-        input_path.write_bytes(contents)
+        (job_dir / "input.mp4").write_bytes(contents)
         (job_dir / "status.txt").write_text("queued")
         volume.commit()
 
-        # Kick off GPU processing (non-blocking)
         process_video.spawn(job_id)
 
         return JSONResponse({"job_id": job_id})
