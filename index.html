@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>STRIDELAB — Sprint Analyzer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  /* ── Variables ─────────────────────────────────────────── */
+  :root {
+    --bg:       #080a0c;
+    --surface:  #0e1215;
+    --border:   #1e2428;
+    --accent:   #e8ff47;
+    --cyan:     #00e5ff;
+    --orange:   #ff6b35;
+    --text:     #c8d0d8;
+    --muted:    #4a5560;
+    --radius:   4px;
+  }
+
+  /* ── Reset ─────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Noise grain overlay ───────────────────────────────── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.35;
+  }
+
+  /* ── Scanline ──────────────────────────────────────────── */
+  body::after {
+    content: '';
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
+    );
+    pointer-events: none;
+    z-index: 9998;
+  }
+
+  /* ── Header ────────────────────────────────────────────── */
+  header {
+    padding: 28px 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  .logo span {
+    color: var(--cyan);
+  }
+
+  .badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 5px 12px;
+    text-transform: uppercase;
+  }
+
+  /* ── Hero ──────────────────────────────────────────────── */
+  .hero {
+    padding: 80px 48px 60px;
+    max-width: 900px;
+    animation: fadeUp 0.7s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .hero-eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.2em;
+    color: var(--cyan);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  .hero h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(3.5rem, 8vw, 7rem);
+    line-height: 0.92;
+    letter-spacing: 0.04em;
+    color: #fff;
+    margin-bottom: 28px;
+  }
+
+  .hero h1 em {
+    font-style: normal;
+    color: var(--accent);
+    display: block;
+  }
+
+  .hero p {
+    font-size: 1.05rem;
+    line-height: 1.75;
+    color: var(--muted);
+    max-width: 520px;
+  }
+
+  /* ── Stats strip ───────────────────────────────────────── */
+  .stats {
+    display: flex;
+    gap: 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    margin: 0 0 60px;
+    animation: fadeUp 0.7s 0.15s ease both;
+  }
+
+  .stat {
+    padding: 24px 48px;
+    border-right: 1px solid var(--border);
+    flex: 1;
+  }
+
+  .stat:last-child { border-right: none; }
+
+  .stat-val {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.2rem;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .stat-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  /* ── Upload section ────────────────────────────────────── */
+  .upload-section {
+    padding: 0 48px 80px;
+    animation: fadeUp 0.7s 0.25s ease both;
+  }
+
+  .section-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Drop zone */
+  .drop-zone {
+    border: 1.5px dashed var(--border);
+    background: var(--surface);
+    padding: 64px 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    position: relative;
+    max-width: 680px;
+  }
+
+  .drop-zone:hover,
+  .drop-zone.dragover {
+    border-color: var(--accent);
+    background: #0e1410;
+  }
+
+  .drop-zone input[type=file] {
+    position: absolute; inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .drop-icon {
+    width: 52px;
+    height: 52px;
+    border: 1.5px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    transition: border-color 0.2s, color 0.2s;
+  }
+
+  .drop-zone:hover .drop-icon {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .drop-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.4rem;
+    letter-spacing: 0.1em;
+    color: #fff;
+  }
+
+  .drop-sub {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+  }
+
+  /* File selected state */
+  .file-selected {
+    display: none;
+    align-items: center;
+    gap: 16px;
+    max-width: 680px;
+    padding: 20px 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    margin-top: 16px;
+  }
+
+  .file-selected.visible { display: flex; }
+
+  .file-icon {
+    width: 40px; height: 40px;
+    background: #0e1410;
+    border: 1px solid var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  .file-info { flex: 1; overflow: hidden; }
+
+  .file-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.82rem;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .file-size {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    margin-top: 3px;
+  }
+
+  .btn-remove {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 4px;
+    transition: color 0.2s;
+  }
+
+  .btn-remove:hover { color: var(--orange); }
+
+  /* Submit button */
+  .btn-analyze {
+    margin-top: 24px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.1rem;
+    letter-spacing: 0.15em;
+    background: var(--accent);
+    color: #080a0c;
+    border: none;
+    padding: 16px 48px;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    display: none;
+  }
+
+  .btn-analyze.visible { display: inline-block; }
+  .btn-analyze:hover   { background: #d4eb3a; }
+  .btn-analyze:active  { transform: scale(0.98); }
+  .btn-analyze:disabled {
+    background: var(--border);
+    color: var(--muted);
+    cursor: not-allowed;
+  }
+
+  /* ── Progress section ──────────────────────────────────── */
+  .progress-section {
+    display: none;
+    padding: 0 48px 80px;
+    max-width: 680px;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  .progress-section.visible { display: block; }
+
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 12px;
+  }
+
+  .progress-stage {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    color: var(--cyan);
+    text-transform: uppercase;
+  }
+
+  .progress-pct {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.8rem;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .progress-bar-track {
+    height: 3px;
+    background: var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    transition: width 0.6s ease;
+    width: 0%;
+  }
+
+  /* Animated shimmer on progress bar */
+  .progress-bar-fill::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 60px; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    animation: shimmer 1.2s infinite;
+  }
+
+  @keyframes shimmer {
+    from { transform: translateX(-60px); }
+    to   { transform: translateX(60px); }
+  }
+
+  .progress-sub {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    margin-top: 10px;
+    letter-spacing: 0.08em;
+  }
+
+  /* Log terminal */
+  .log-terminal {
+    margin-top: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 16px 20px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--muted);
+    max-height: 140px;
+    overflow-y: auto;
+    letter-spacing: 0.04em;
+    line-height: 1.8;
+  }
+
+  .log-line { display: block; }
+  .log-line.success { color: #4caf81; }
+  .log-line.info    { color: var(--cyan); }
+  .log-line.accent  { color: var(--accent); }
+
+  /* ── Result section ────────────────────────────────────── */
+  .result-section {
+    display: none;
+    padding: 0 48px 80px;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  .result-section.visible { display: block; }
+
+  .result-player {
+    max-width: 680px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  .result-player video {
+    width: 100%;
+    display: block;
+  }
+
+  .result-actions {
+    display: flex;
+    gap: 12px;
+    padding: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  .btn-download {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 0.12em;
+    background: var(--accent);
+    color: #080a0c;
+    border: none;
+    padding: 12px 32px;
+    cursor: pointer;
+    transition: background 0.15s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-download:hover { background: #d4eb3a; }
+
+  .btn-another {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    background: none;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 12px 24px;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+
+  .btn-another:hover {
+    border-color: var(--text);
+    color: var(--text);
+  }
+
+  /* ── Model info strip ──────────────────────────────────── */
+  .model-strip {
+    padding: 16px 48px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 40px;
+    flex-wrap: wrap;
+    animation: fadeUp 0.7s 0.35s ease both;
+  }
+
+  .model-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .model-key {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .model-val {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--cyan);
+    font-weight: 600;
+  }
+
+  /* ── Responsive ────────────────────────────────────────── */
+  @media (max-width: 640px) {
+    header, .hero, .upload-section,
+    .progress-section, .result-section { padding-left: 24px; padding-right: 24px; }
+    .stat { padding: 20px 24px; }
+    .hero { padding-top: 48px; }
+    .stats { flex-wrap: wrap; }
+    .stat { min-width: 50%; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  <a class="logo" href="#">STRIDE<span>LAB</span></a>
+  <div class="badge">Beta · GPU-Powered</div>
+</header>
+
+<!-- Hero -->
+<section class="hero">
+  <p class="hero-eyebrow">// AI Sprint Biomechanics</p>
+  <h1>Analyze<br><em>Your Form</em></h1>
+  <p>Upload a side-view running video. YOLO26x runs on a cloud A10G GPU to track every joint, measure key angles, and overlay real-time biomechanical data — processed in seconds, not minutes.</p>
+</section>
+
+<!-- Stats strip -->
+<div class="stats">
+  <div class="stat">
+    <div class="stat-val">YOLO26X</div>
+    <div class="stat-label">Model</div>
+  </div>
+  <div class="stat">
+    <div class="stat-val">A10G</div>
+    <div class="stat-label">GPU · 24 GB VRAM</div>
+  </div>
+  <div class="stat">
+    <div class="stat-val">7</div>
+    <div class="stat-label">Joint angles tracked</div>
+  </div>
+  <div class="stat">
+    <div class="stat-val">FP16</div>
+    <div class="stat-label">Inference precision</div>
+  </div>
+</div>
+
+<!-- Upload -->
+<section class="upload-section" id="upload-section">
+  <p class="section-label">Upload video</p>
+
+  <div class="drop-zone" id="drop-zone">
+    <input type="file" id="file-input" accept="video/mp4,video/quicktime,video/x-msvideo,video/x-matroska,.mp4,.mov,.avi,.mkv"/>
+    <div class="drop-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+        <polyline points="17 8 12 3 7 8"/>
+        <line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+    </div>
+    <div class="drop-title">Drop video here</div>
+    <div class="drop-sub">MP4 · MOV · AVI · MKV &nbsp;·&nbsp; Max 500 MB</div>
+  </div>
+
+  <div class="file-selected" id="file-selected">
+    <div class="file-icon">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="2" y="2" width="20" height="20" rx="2"/>
+        <path d="M10 9l5 3-5 3z"/>
+      </svg>
+    </div>
+    <div class="file-info">
+      <div class="file-name" id="file-name"></div>
+      <div class="file-size" id="file-size"></div>
+    </div>
+    <button class="btn-remove" id="btn-remove" title="Remove">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+
+  <button class="btn-analyze" id="btn-analyze">Analyze Sprint</button>
+</section>
+
+<!-- Progress -->
+<section class="progress-section" id="progress-section">
+  <p class="section-label">Processing</p>
+  <div class="progress-header">
+    <span class="progress-stage" id="progress-stage">Queued</span>
+    <span class="progress-pct" id="progress-pct">0%</span>
+  </div>
+  <div class="progress-bar-track">
+    <div class="progress-bar-fill" id="progress-bar"></div>
+  </div>
+  <div class="progress-sub" id="progress-sub">Waiting for GPU allocation…</div>
+  <div class="log-terminal" id="log-terminal"></div>
+</section>
+
+<!-- Result -->
+<section class="result-section" id="result-section">
+  <p class="section-label">Result</p>
+  <div class="result-player">
+    <video id="result-video" controls playsinline></video>
+    <div class="result-actions">
+      <a class="btn-download" id="btn-download" href="#" download>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Download Video
+      </a>
+      <button class="btn-another" id="btn-another">Analyze Another</button>
+    </div>
+  </div>
+</section>
+
+<!-- Model info -->
+<div class="model-strip">
+  <div class="model-item">
+    <span class="model-key">Model</span>
+    <span class="model-val">YOLO26x-pose</span>
+  </div>
+  <div class="model-item">
+    <span class="model-key">Tracker</span>
+    <span class="model-val">ByteTrack</span>
+  </div>
+  <div class="model-item">
+    <span class="model-key">Smoother</span>
+    <span class="model-val">Kalman + EMA</span>
+  </div>
+  <div class="model-item">
+    <span class="model-key">Keypoints</span>
+    <span class="model-val">COCO-17</span>
+  </div>
+  <div class="model-item">
+    <span class="model-key">Angles</span>
+    <span class="model-val">Hip · Knee · Elbow · Trunk</span>
+  </div>
+  <div class="model-item">
+    <span class="model-key">Powered by</span>
+    <span class="model-val">Modal · A10G GPU</span>
+  </div>
+</div>
+
+<script>
+  // ── Config ────────────────────────────────────────────────
+  // Replace with your deployed Modal URL after running: modal deploy modal_backend.py
+  const API_BASE = "https://ethantian586--sprint-analyzer-web.modal.run";
+
+  // ── State ─────────────────────────────────────────────────
+  let selectedFile = null;
+  let jobId        = null;
+  let pollTimer    = null;
+
+  // ── Elements ──────────────────────────────────────────────
+  const dropZone       = document.getElementById("drop-zone");
+  const fileInput      = document.getElementById("file-input");
+  const fileSelected   = document.getElementById("file-selected");
+  const fileNameEl     = document.getElementById("file-name");
+  const fileSizeEl     = document.getElementById("file-size");
+  const btnRemove      = document.getElementById("btn-remove");
+  const btnAnalyze     = document.getElementById("btn-analyze");
+  const uploadSection  = document.getElementById("upload-section");
+  const progressSection= document.getElementById("progress-section");
+  const resultSection  = document.getElementById("result-section");
+  const progressStage  = document.getElementById("progress-stage");
+  const progressPct    = document.getElementById("progress-pct");
+  const progressBar    = document.getElementById("progress-bar");
+  const progressSub    = document.getElementById("progress-sub");
+  const logTerminal    = document.getElementById("log-terminal");
+  const resultVideo    = document.getElementById("result-video");
+  const btnDownload    = document.getElementById("btn-download");
+  const btnAnother     = document.getElementById("btn-another");
+
+  // ── Helpers ───────────────────────────────────────────────
+  function formatBytes(bytes) {
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+  }
+
+  function addLog(msg, type = "info") {
+    const line = document.createElement("span");
+    line.className = `log-line ${type}`;
+    const ts = new Date().toLocaleTimeString("en-US", { hour12: false });
+    line.textContent = `[${ts}]  ${msg}`;
+    logTerminal.appendChild(line);
+    logTerminal.scrollTop = logTerminal.scrollHeight;
+  }
+
+  function setFile(file) {
+    selectedFile = file;
+    fileNameEl.textContent = file.name;
+    fileSizeEl.textContent = formatBytes(file.size);
+    fileSelected.classList.add("visible");
+    btnAnalyze.classList.add("visible");
+  }
+
+  function clearFile() {
+    selectedFile = null;
+    fileInput.value = "";
+    fileSelected.classList.remove("visible");
+    btnAnalyze.classList.remove("visible");
+  }
+
+  // ── Drag & Drop ───────────────────────────────────────────
+  dropZone.addEventListener("dragover", e => {
+    e.preventDefault();
+    dropZone.classList.add("dragover");
+  });
+
+  dropZone.addEventListener("dragleave", () => {
+    dropZone.classList.remove("dragover");
+  });
+
+  dropZone.addEventListener("drop", e => {
+    e.preventDefault();
+    dropZone.classList.remove("dragover");
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith("video/")) setFile(file);
+  });
+
+  fileInput.addEventListener("change", () => {
+    if (fileInput.files[0]) setFile(fileInput.files[0]);
+  });
+
+  btnRemove.addEventListener("click", clearFile);
+
+  // ── Upload & analyze ──────────────────────────────────────
+  btnAnalyze.addEventListener("click", async () => {
+    if (!selectedFile) return;
+
+    btnAnalyze.disabled = true;
+    btnAnalyze.textContent = "Uploading…";
+
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+
+    try {
+      const res  = await fetch(`${API_BASE}/analyze`, { method: "POST", body: formData });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "Upload failed");
+
+      jobId = data.job_id;
+
+      // Switch to progress view
+      uploadSection.style.display   = "none";
+      progressSection.classList.add("visible");
+      logTerminal.innerHTML = "";
+      addLog(`Job created: ${jobId.slice(0, 8)}…`, "accent");
+      addLog("Waiting for GPU allocation on Modal A10G…", "info");
+
+      startPolling();
+
+    } catch (err) {
+      alert("Error: " + err.message);
+      btnAnalyze.disabled   = false;
+      btnAnalyze.textContent = "Analyze Sprint";
+    }
+  });
+
+  // ── Polling ───────────────────────────────────────────────
+  function startPolling() {
+    pollTimer = setInterval(pollStatus, 2500);
+  }
+
+  async function pollStatus() {
+    try {
+      const res  = await fetch(`${API_BASE}/status/${jobId}`);
+      const data = await res.json();
+
+      const pct   = data.progress || 0;
+      const stage = data.status;
+
+      progressBar.style.width = `${pct}%`;
+      progressPct.textContent  = `${pct.toFixed(0)}%`;
+
+      const labels = {
+        queued:        "Queued",
+        loading_model: "Loading YOLO26x…",
+        processing:    "Processing Frames",
+        done:          "Complete",
+      };
+      progressStage.textContent = labels[stage] || stage;
+
+      if (stage === "queued") {
+        progressSub.textContent = "Waiting for GPU allocation…";
+      } else if (stage === "loading_model") {
+        progressSub.textContent = "Loading YOLO26x-pose weights onto A10G…";
+        addLog("GPU allocated. Loading YOLO26x-pose weights…", "info");
+      } else if (stage === "processing") {
+        progressSub.textContent = `Running pose estimation — ${pct.toFixed(1)}% complete`;
+      } else if (stage === "done") {
+        clearInterval(pollTimer);
+        addLog("Processing complete.", "success");
+        addLog("Fetching output video…", "info");
+        showResult();
+      }
+
+    } catch (err) {
+      addLog("Poll error: " + err.message, "info");
+    }
+  }
+
+  // ── Show result ───────────────────────────────────────────
+  async function showResult() {
+    const downloadUrl = `${API_BASE}/download/${jobId}`;
+
+    resultVideo.src   = downloadUrl;
+    btnDownload.href  = downloadUrl;
+    btnDownload.setAttribute("download", `sprint_${jobId.slice(0,8)}.mp4`);
+
+    progressSection.classList.remove("visible");
+    resultSection.classList.add("visible");
+    addLog("Done. Video ready.", "success");
+  }
+
+  // ── Analyze another ───────────────────────────────────────
+  btnAnother.addEventListener("click", () => {
+    jobId = null;
+    clearFile();
+    resultSection.classList.remove("visible");
+    progressSection.classList.remove("visible");
+    uploadSection.style.display = "";
+    btnAnalyze.disabled    = false;
+    btnAnalyze.textContent = "Analyze Sprint";
+    progressBar.style.width = "0%";
+    progressPct.textContent = "0%";
+    resultVideo.src = "";
+  });
+</script>
+</body>
+</html>
