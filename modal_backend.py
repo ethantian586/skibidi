@@ -353,6 +353,7 @@ def process_video(job_id: str):
     image=gpu_image,
     volumes={str(VOLUME_PATH): volume},
     memory=512,
+    secrets=[modal.Secret.from_name("sprint-analyzer-secrets")],
 )
 @modal.concurrent(max_inputs=20)
 @modal.asgi_app()
