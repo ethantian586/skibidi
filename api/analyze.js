@@ -1,17 +1,27 @@
 /**
  * Vercel serverless proxy — POST /analyze
- * Forwards the video upload to Modal with the secret API key.
- * The key lives in Vercel's environment variables, never in the browser.
+ * Buffers the incoming multipart upload then forwards to Modal with the secret key.
  */
 
 const MODAL_URL = "https://ethantian586--sprint-analyzer-web.modal.run";
 
 export const config = {
   api: {
-    bodyParser: false,        // required — we forward raw multipart form data
+    bodyParser: false,
     responseLimit: "550mb",
+    externalResolver: true,
   },
 };
+
+// Helper — collect the raw request body into a Buffer
+function getRawBody(req) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    req.on("data", (chunk) => chunks.push(chunk));
+    req.on("end",  () => resolve(Buffer.concat(chunks)));
+    req.on("error", reject);
+  });
+}
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -19,21 +29,29 @@ export default async function handler(req, res) {
   }
 
   try {
+    const rawBody = await getRawBody(req);
+
     const response = await fetch(`${MODAL_URL}/analyze`, {
       method: "POST",
       headers: {
-        "X-API-Key": process.env.API_SECRET,   // injected by Vercel, never visible
-        "Content-Type": req.headers["content-type"],
+        "X-API-Key":    process.env.API_SECRET,
+        "Content-Type": req.headers["content-type"],  // preserves multipart boundary
       },
-      body: req,                               // stream the raw body straight through
-      duplex: "half",                          // required for Node 18+ streaming
+      body: rawBody,
     });
 
-    const data = await response.json();
-    return res.status(response.status).json(data);
+    // Forward whatever Modal responds — success or error
+    const contentType = response.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      const data = await response.json();
+      return res.status(response.status).json(data);
+    } else {
+      const text = await response.text();
+      return res.status(response.status).json({ detail: text });
+    }
 
   } catch (err) {
-    console.error("Proxy error:", err);
+    console.error("Proxy /analyze error:", err);
     return res.status(502).json({ detail: "Failed to reach processing server." });
   }
 }
