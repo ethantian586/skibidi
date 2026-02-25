@@ -241,9 +241,15 @@ def process_video(job_id: str):
     import numpy as np
     from ultralytics import YOLO
 
-    input_path  = VOLUME_PATH / job_id / "input.mp4"
-    output_path = VOLUME_PATH / job_id / "output.mp4"
-    status_path = VOLUME_PATH / job_id / "status.txt"
+    # Reload volume so we can see the directory the web function just created
+    volume.reload()
+
+    job_dir     = VOLUME_PATH / job_id
+    job_dir.mkdir(parents=True, exist_ok=True)  # safe no-op if already exists
+
+    input_path  = job_dir / "input.mp4"
+    output_path = job_dir / "output.mp4"
+    status_path = job_dir / "status.txt"
 
     def write_status(msg: str):
         status_path.write_text(msg)
