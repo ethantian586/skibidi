@@ -263,26 +263,6 @@
   }
   .btn-another:hover { border-color: var(--text); color: var(--text); }
 
-  .btn-analysis {
-    padding: 12px 20px;
-    background: none;
-    color: #00e5ff;
-    border: 1px solid #00e5ff;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.78rem;
-    font-weight: 500;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    cursor: pointer;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    transition: background 0.15s, color 0.15s;
-    white-space: nowrap;
-  }
-  .btn-analysis:hover { background: #00e5ff; color: #0a0a0a; }
-
   @media (max-width: 480px) {
     body { justify-content: flex-start; padding-top: 60px; }
     .logo { margin-bottom: 40px; }
@@ -352,12 +332,6 @@
           </svg>
           Download
         </a>
-        <a class="btn-analysis" id="btn-analysis" href="#">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M3 3v18h18"/><path d="M7 16l4-8 4 4 4-6"/>
-          </svg>
-          Analysis
-        </a>
         <button class="btn-another" id="btn-another">Analyze another</button>
       </div>
     </div>
@@ -388,7 +362,6 @@
   const resultVideo     = document.getElementById("result-video");
   const btnDownload     = document.getElementById("btn-download");
   const btnAnother      = document.getElementById("btn-another");
-  const btnAnalysis     = document.getElementById("btn-analysis");
 
   function formatBytes(b) {
     return b < 1024 * 1024
@@ -429,9 +402,17 @@
     dropZone.classList.remove("dragover");
     const file = e.dataTransfer.files[0];
     if (file && file.type.startsWith("video/")) setFile(file);
+    else if (file) showError("Please upload a video file (MP4, MOV, AVI, or MKV).");
   });
-  fileInput.addEventListener("change", () => { if (fileInput.files[0]) setFile(fileInput.files[0]); });
-  btnRemove.addEventListener("click", clearFile);
+  fileInput.addEventListener("change", e => {
+    const file = e.target.files[0];
+    if (file) setFile(file);
+  });
+  // Ensure clicking anywhere on the drop zone opens the file picker
+  dropZone.addEventListener("click", e => {
+    if (e.target !== fileInput) fileInput.click();
+  });
+  btnRemove.addEventListener("click", e => { e.stopPropagation(); clearFile(); });
 
   btnAnalyze.addEventListener("click", async () => {
     if (!selectedFile) return;
@@ -506,7 +487,6 @@
     resultVideo.src  = url;
     btnDownload.href = url;
     btnDownload.setAttribute("download", `sprint_${jobId.slice(0, 8)}.mp4`);
-    btnAnalysis.href = `/analysis.html?job=${jobId}`;
     progressSection.classList.remove("visible");
     resultSection.classList.add("visible");
   }
@@ -522,6 +502,7 @@
     progressNum.textContent = "0";
     btnAnalyze.disabled     = false;
     btnAnalyze.textContent  = "Analyze";
+    btnAnalyze.classList.remove("visible"); // ensure clean state after reset
   });
 </script>
 </body>
