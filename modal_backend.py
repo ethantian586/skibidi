@@ -6,6 +6,7 @@ Exposes a FastAPI web server with:
   POST /analyze   — upload video, returns job ID
   GET  /status    — poll job status
   GET  /download  — download processed video
+  hi
 
 Deploy:
     pip install modal
