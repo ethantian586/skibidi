@@ -311,98 +311,162 @@
     errorEl.classList.add("visible");
   }
 
-  // ── Find peaks in an angle time-series (local maxima) ──
-  function findPeaks(values, minDistance) {
-    const peaks = [];
-    for (let i = 1; i < values.length - 1; i++) {
-      if (values[i] > values[i - 1] && values[i] > values[i + 1]) {
-        // Enforce minimum distance between peaks
-        if (peaks.length === 0 || (i - peaks[peaks.length - 1]) >= minDistance) {
-          peaks.push(i);
-        }
+  // ── Clean & interpolate an angle time-series ──
+  function cleanSeries(frames, angleKey) {
+    const raw = frames.map(f => (f.angles && f.angles[angleKey]) ?? null);
+
+    // Interpolate nulls
+    for (let i = 0; i < raw.length; i++) {
+      if (raw[i] !== null) continue;
+      let before = i - 1;
+      while (before >= 0 && raw[before] === null) before--;
+      let after = i + 1;
+      while (after < raw.length && raw[after] === null) after++;
+      if (before >= 0 && after < raw.length) {
+        raw[i] = raw[before] + (raw[after] - raw[before]) * ((i - before) / (after - before));
+      } else if (before >= 0) {
+        raw[i] = raw[before];
+      } else if (after < raw.length) {
+        raw[i] = raw[after];
+      } else {
+        raw[i] = 0;
       }
     }
-    return peaks;
+
+    // Heavy smoothing (window = 7) to kill noise
+    const out = [];
+    const w = 7;
+    for (let i = 0; i < raw.length; i++) {
+      let sum = 0, n = 0;
+      for (let j = Math.max(0, i - w); j <= Math.min(raw.length - 1, i + w); j++) {
+        sum += raw[j]; n++;
+      }
+      out.push(sum / n);
+    }
+    return out;
+  }
+
+  // ── Find peaks with prominence filtering ──
+  function findProminentPeaks(values, minDistFrames) {
+    // Step 1: find ALL local maxima
+    const candidates = [];
+    for (let i = 2; i < values.length - 2; i++) {
+      if (values[i] > values[i - 1] && values[i] > values[i + 1] &&
+          values[i] > values[i - 2] && values[i] > values[i + 2]) {
+        candidates.push(i);
+      }
+    }
+    if (candidates.length === 0) return [];
+
+    // Step 2: compute prominence for each candidate
+    const globalMin = Math.min(...values);
+    const globalMax = Math.max(...values);
+    const range = globalMax - globalMin || 1;
+
+    const withProm = candidates.map(idx => {
+      // Find the lowest valley on each side before hitting a higher peak
+      let leftMin = values[idx], rightMin = values[idx];
+      for (let j = idx - 1; j >= 0; j--) {
+        leftMin = Math.min(leftMin, values[j]);
+        if (values[j] > values[idx]) break;
+      }
+      for (let j = idx + 1; j < values.length; j++) {
+        rightMin = Math.min(rightMin, values[j]);
+        if (values[j] > values[idx]) break;
+      }
+      const prominence = values[idx] - Math.max(leftMin, rightMin);
+      return { idx, prominence };
+    });
+
+    // Step 3: keep only peaks with prominence > 15% of total range
+    const minProm = range * 0.15;
+    const strong = withProm
+      .filter(p => p.prominence >= minProm)
+      .sort((a, b) => b.prominence - a.prominence);
+
+    // Step 4: enforce minimum distance (greedy, highest prominence first)
+    const selected = [];
+    for (const peak of strong) {
+      const tooClose = selected.some(s => Math.abs(s - peak.idx) < minDistFrames);
+      if (!tooClose) selected.push(peak.idx);
+    }
+
+    return selected.sort((a, b) => a - b);
   }
 
   // ── Detect gait cycles from hip angle data ──
   function detectGaitCycles(frames, angleKey, fps) {
-    // Extract the angle values, replacing nulls with interpolated values
-    const values = frames.map(f => f.angles[angleKey]);
+    const smoothed = cleanSeries(frames, angleKey);
 
-    // Simple interpolation for null values
-    for (let i = 0; i < values.length; i++) {
-      if (values[i] === null || values[i] === undefined) {
-        // Find nearest non-null before and after
-        let before = i - 1;
-        while (before >= 0 && values[before] === null) before--;
-        let after = i + 1;
-        while (after < values.length && values[after] === null) after++;
+    // Minimum distance between peaks: a full stride at max sprint is ~0.3s,
+    // so require at least 0.35s between peaks
+    const minDist = Math.max(8, Math.floor(fps * 0.35));
+    const peaks = findProminentPeaks(smoothed, minDist);
 
-        if (before >= 0 && after < values.length) {
-          const t = (i - before) / (after - before);
-          values[i] = values[before] + t * (values[after] - values[before]);
-        } else if (before >= 0) {
-          values[i] = values[before];
-        } else if (after < values.length) {
-          values[i] = values[after];
-        } else {
-          values[i] = 0;
-        }
-      }
-    }
+    console.log(`[${angleKey}] Found ${peaks.length} prominent peaks:`, peaks);
 
-    // Smooth the signal a bit to reduce noise
-    const smoothed = [];
-    const w = 3;
-    for (let i = 0; i < values.length; i++) {
-      let sum = 0, count = 0;
-      for (let j = Math.max(0, i - w); j <= Math.min(values.length - 1, i + w); j++) {
-        sum += values[j];
-        count++;
-      }
-      smoothed.push(sum / count);
-    }
-
-    // Find peaks (max hip flexion = start of each stride)
-    // Minimum distance between peaks: ~0.25s of frames (to avoid double-counting)
-    const minDist = Math.max(5, Math.floor(fps * 0.25));
-    const peaks = findPeaks(smoothed, minDist);
-
-    // Build cycles: each cycle goes from one peak to the next
+    // Build cycles (peak to peak)
     const cycles = [];
     for (let i = 0; i < peaks.length - 1; i++) {
       const startFrame = peaks[i];
       const endFrame   = peaks[i + 1];
       const duration   = endFrame - startFrame;
-
-      // Only consider cycles that are reasonable length (0.3s - 1.5s)
       const durationSec = duration / fps;
-      if (durationSec >= 0.3 && durationSec <= 1.5) {
+      // Accept cycles between 0.25s and 2.0s
+      if (durationSec >= 0.25 && durationSec <= 2.0) {
         cycles.push({ startFrame, endFrame, duration });
+        console.log(`  Cycle: frame ${startFrame}→${endFrame} (${durationSec.toFixed(2)}s)`);
       }
     }
 
     return cycles;
   }
 
+  // ── Fallback: evenly spaced frames across the video ──
+  function evenlySpacedCycles(totalFrames, fps) {
+    // Split the middle 70% of the video into two halves for the two rows
+    const start = Math.floor(totalFrames * 0.15);
+    const end   = Math.floor(totalFrames * 0.85);
+    const mid   = Math.floor((start + end) / 2);
+    const dur1  = mid - start;
+    const dur2  = end - mid;
+
+    console.log("Fallback: using evenly spaced frames");
+    return [
+      { startFrame: start, endFrame: mid, duration: dur1 },
+      { startFrame: mid,   endFrame: end, duration: dur2 },
+    ];
+  }
+
   // ── Capture a single frame from the video at a given time ──
   function captureFrame(videoEl, time) {
     return new Promise((resolve, reject) => {
-      const onSeeked = () => {
+      // Clamp to valid range
+      const t = Math.max(0, Math.min(time, videoEl.duration - 0.05));
+      const timeout = setTimeout(() => {
         videoEl.removeEventListener("seeked", onSeeked);
-        try {
-          const canvas = document.createElement("canvas");
-          canvas.width  = videoEl.videoWidth;
-          canvas.height = videoEl.videoHeight;
-          canvas.getContext("2d").drawImage(videoEl, 0, 0);
-          resolve(canvas.toDataURL("image/jpeg", 0.85));
-        } catch (e) {
-          reject(e);
-        }
+        reject(new Error("Seek timeout"));
+      }, 5000);
+
+      const onSeeked = () => {
+        clearTimeout(timeout);
+        videoEl.removeEventListener("seeked", onSeeked);
+        // Small delay to ensure the frame is rendered
+        requestAnimationFrame(() => {
+          try {
+            const canvas = document.createElement("canvas");
+            canvas.width  = videoEl.videoWidth;
+            canvas.height = videoEl.videoHeight;
+            canvas.getContext("2d").drawImage(videoEl, 0, 0);
+            resolve(canvas.toDataURL("image/jpeg", 0.85));
+          } catch (e) {
+            reject(e);
+          }
+        });
       };
+
       videoEl.addEventListener("seeked", onSeeked);
-      videoEl.currentTime = time;
+      videoEl.currentTime = t;
     });
   }
 
@@ -413,6 +477,8 @@
     for (let i = 0; i < PHASE_OFFSETS.length; i++) {
       const frameIdx = cycle.startFrame + Math.round(PHASE_OFFSETS[i] * cycle.duration);
       const time     = frameIdx / fps;
+
+      console.log(`  ${PHASES[i]}: frame ${frameIdx}, time ${time.toFixed(3)}s`);
 
       try {
         const dataUrl = await captureFrame(video, time);
@@ -434,79 +500,118 @@
       return;
     }
 
+    let analysisOk = false;
+    let fps = 30;
+    let totalFrames = 0;
+    let cycle1 = null, cycle2 = null;
+
+    // 1. Try to fetch analysis data for smart cycle detection
     try {
-      // 1. Fetch analysis data
       const res = await fetch(`/analysis-data/${jobId}`);
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.detail || "Analysis data not available.");
-      }
-      const analysis = await res.json();
-      const fps = analysis.fps || 30;
-      const frames = analysis.frames || [];
+      if (res.ok) {
+        const analysis = await res.json();
+        fps = analysis.fps || 30;
+        const frames = analysis.frames || [];
+        totalFrames = frames.length;
 
-      if (frames.length === 0) {
-        throw new Error("No frame data available.");
-      }
+        if (frames.length > 0) {
+          analysisOk = true;
+          console.log(`Analysis data: ${frames.length} frames at ${fps} fps`);
 
-      // 2. Detect gait cycles for right and left hip
-      const rCycles = detectGaitCycles(frames, "R Hip", fps);
-      const lCycles = detectGaitCycles(frames, "L Hip", fps);
+          // Try R Hip first, then L Hip
+          const rCycles = detectGaitCycles(frames, "R Hip", fps);
+          const lCycles = detectGaitCycles(frames, "L Hip", fps);
 
-      // Pick the best cycle from each (prefer one in the middle of the video)
-      function pickBestCycle(cycles) {
-        if (cycles.length === 0) return null;
-        // Pick one roughly in the middle
-        return cycles[Math.floor(cycles.length / 2)];
-      }
+          console.log(`R Hip cycles: ${rCycles.length}, L Hip cycles: ${lCycles.length}`);
 
-      const cycle1 = pickBestCycle(rCycles);
-      const cycle2 = pickBestCycle(lCycles);
+          // Pick the best cycle from each (prefer middle of video for clearest stride)
+          if (rCycles.length > 0) {
+            cycle1 = rCycles[Math.floor(rCycles.length / 2)];
+          }
+          if (lCycles.length > 0) {
+            // Try to pick a left cycle that doesn't overlap too much with cycle1
+            for (const lc of lCycles) {
+              if (!cycle1 || Math.abs(lc.startFrame - cycle1.startFrame) > cycle1.duration * 0.3) {
+                cycle2 = lc;
+                break;
+              }
+            }
+            if (!cycle2) cycle2 = lCycles[Math.floor(lCycles.length / 2)];
+          }
 
-      if (!cycle1 && !cycle2) {
-        throw new Error("Could not detect running strides from the video data.");
-      }
-
-      // 3. Load the processed video
-      await new Promise((resolve, reject) => {
-        video.addEventListener("loadeddata", resolve, { once: true });
-        video.addEventListener("error", () => reject(new Error("Failed to load video.")), { once: true });
-        video.src = `/download/${jobId}`;
-      });
-
-      // Short pause to ensure video is seekable
-      await new Promise(r => setTimeout(r, 500));
-
-      // 4. Show kinogram section
-      loadingEl.classList.add("hidden");
-      kinogramEl.classList.add("visible");
-
-      // 5. Capture frames for each row
-      const row1El = document.getElementById("filmstrip-row1");
-      const row2El = document.getElementById("filmstrip-row2");
-      const row1Label = document.getElementById("row1-label");
-      const row2Label = document.getElementById("row2-label");
-
-      if (cycle1) {
-        row1Label.textContent = "Stride 1 — Right";
-        await fillRow(row1El, cycle1, fps);
-      }
-
-      if (cycle2) {
-        row2Label.textContent = "Stride 2 — Left";
-        await fillRow(row2El, cycle2, fps);
-      } else if (cycle1 && rCycles.length > 1) {
-        // Fallback: use a different right hip cycle for row 2
-        const alt = rCycles[Math.floor(rCycles.length / 2) + 1] || rCycles[0];
-        if (alt !== cycle1) {
-          row2Label.textContent = "Stride 2 — Right";
-          await fillRow(row2El, alt, fps);
+          // If only one side had cycles, use a second cycle from the same side
+          if (cycle1 && !cycle2 && rCycles.length > 1) {
+            const idx = Math.floor(rCycles.length / 2);
+            cycle2 = rCycles[idx + 1] || rCycles[idx - 1] || rCycles[0];
+            if (cycle2 === cycle1 && rCycles.length > 1) cycle2 = rCycles[rCycles.length - 1];
+          }
+          if (!cycle1 && cycle2 && lCycles.length > 1) {
+            const idx = Math.floor(lCycles.length / 2);
+            cycle1 = lCycles[idx + 1] || lCycles[idx - 1] || lCycles[0];
+            if (cycle1 === cycle2 && lCycles.length > 1) cycle1 = lCycles[0];
+          }
         }
       }
+    } catch (e) {
+      console.warn("Could not fetch analysis data:", e);
+    }
 
+    // 2. Load the processed video
+    try {
+      await new Promise((resolve, reject) => {
+        video.addEventListener("canplaythrough", resolve, { once: true });
+        video.addEventListener("error", () => reject(new Error("Failed to load video.")), { once: true });
+        video.src = `/download/${jobId}`;
+        video.load();
+      });
     } catch (err) {
-      console.error(err);
-      showError(err.message);
+      showError("Failed to load the processed video.");
+      return;
+    }
+
+    // Wait a moment for video to become seekable
+    await new Promise(r => setTimeout(r, 800));
+
+    console.log(`Video loaded: ${video.duration.toFixed(2)}s, ${video.videoWidth}x${video.videoHeight}`);
+
+    // 3. Fallback to evenly spaced frames if cycle detection failed
+    if (!cycle1 && !cycle2) {
+      const vidFrames = Math.floor(video.duration * fps);
+      const fallback = evenlySpacedCycles(vidFrames, fps);
+      cycle1 = fallback[0];
+      cycle2 = fallback[1];
+    }
+
+    // If we still only have one, create a second from the other half
+    if (cycle1 && !cycle2) {
+      const vidFrames = Math.floor(video.duration * fps);
+      // Place second cycle after the first one
+      const start2 = Math.min(cycle1.endFrame + 2, vidFrames - 10);
+      const end2   = Math.min(start2 + cycle1.duration, vidFrames);
+      if (end2 - start2 > 4) {
+        cycle2 = { startFrame: start2, endFrame: end2, duration: end2 - start2 };
+      }
+    }
+
+    // 4. Show kinogram and fill frames
+    loadingEl.classList.add("hidden");
+    kinogramEl.classList.add("visible");
+
+    const row1El    = document.getElementById("filmstrip-row1");
+    const row2El    = document.getElementById("filmstrip-row2");
+    const row1Label = document.getElementById("row1-label");
+    const row2Label = document.getElementById("row2-label");
+
+    if (cycle1) {
+      row1Label.textContent = analysisOk ? "Stride 1 — Right" : "Stride 1";
+      console.log("Filling row 1:", cycle1);
+      await fillRow(row1El, cycle1, fps);
+    }
+
+    if (cycle2) {
+      row2Label.textContent = analysisOk ? "Stride 2 — Left" : "Stride 2";
+      console.log("Filling row 2:", cycle2);
+      await fillRow(row2El, cycle2, fps);
     }
   }
 
