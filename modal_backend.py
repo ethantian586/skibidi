@@ -282,7 +282,7 @@ def process_video(job_id: str):
     smoother    = EMA(alpha=0.15)
     last_angles = {}
     frame_idx   = 0
-
+    #hi
     write_status("processing:0")
 
     results = model.track(
