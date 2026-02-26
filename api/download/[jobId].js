@@ -3,7 +3,7 @@
  * Streams the processed video from Modal back to the browser.
  */
 
-const MODAL_URL = "https://ethantian586--sprint-analyzer-web.modal.run";
+const MODAL_URL = process.env.MODAL_URL ?? "https://ethantian586--sprint-analyzer-web.modal.run";
 
 export const config = {
   api: {

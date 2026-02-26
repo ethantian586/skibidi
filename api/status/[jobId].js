@@ -3,7 +3,7 @@
  * Forwards status polling to Modal.
  */
 
-const MODAL_URL = "https://ethantian586--sprint-analyzer-web.modal.run";
+const MODAL_URL = process.env.MODAL_URL ?? "https://ethantian586--sprint-analyzer-web.modal.run";
 
 export default async function handler(req, res) {
   const { jobId } = req.query;

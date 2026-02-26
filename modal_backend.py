@@ -122,7 +122,7 @@ class KalmanKeypoint:
         ], dtype=np.float32)
         self.kf.measurementMatrix   = np.array([[1,0,0,0],[0,1,0,0]], dtype=np.float32)
         self.kf.processNoiseCov     = np.eye(4, dtype=np.float32) * 1e-2
-        self.kf.measurementNoiseCov = np.eye(2, dtype=np.float32) * 1e-1
+        self.kf.measurementNoiseCov = np.eye(2, dtype=np.float32) * 0.5
         self.kf.errorCovPost        = np.eye(4, dtype=np.float32)
         self.initialised = False
 
@@ -158,7 +158,7 @@ class KalmanSkeleton:
 
 
 class EMA:
-    def __init__(self, alpha=0.25):
+    def __init__(self, alpha=0.15):
         self.alpha = alpha
         self.state = {}
 
@@ -273,7 +273,7 @@ def process_video(job_id: str):
     )
 
     kalman      = KalmanSkeleton()
-    smoother    = EMA(alpha=0.25)
+    smoother    = EMA(alpha=0.15)
     last_angles = {}
     frame_idx   = 0
 
@@ -282,8 +282,9 @@ def process_video(job_id: str):
     results = model.track(
         source=str(input_path),
         tracker="bytetrack.yaml",
-        conf=0.25,
-        iou=0.5,
+        imgsz=1280,
+        conf=0.35,
+        iou=0.3,
         persist=True,
         stream=True,
         verbose=False,
@@ -312,17 +313,17 @@ def process_video(job_id: str):
                     best_confs = kp[:, 2]
 
         if best_kpts is not None:
-            best_kpts = kalman.update(best_kpts, best_confs, 0.3)
-            draw_skeleton(frame, best_kpts, best_confs, 0.3)
+            best_kpts = kalman.update(best_kpts, best_confs, 0.2)
+            draw_skeleton(frame, best_kpts, best_confs, 0.2)
 
             raw = {}
             for (a, v, b, label) in ANGLE_DEFS:
-                if best_confs[a] >= 0.3 and best_confs[v] >= 0.3 and best_confs[b] >= 0.3:
+                if best_confs[a] >= 0.2 and best_confs[v] >= 0.2 and best_confs[b] >= 0.2:
                     raw[label] = angle_at_vertex(best_kpts[a], best_kpts[v], best_kpts[b])
                 else:
                     raw[label] = None
 
-            if all(best_confs[i] >= 0.3 for i in [5, 6, 11, 12]):
+            if all(best_confs[i] >= 0.2 for i in [5, 6, 11, 12]):
                 raw["Trunk"] = trunk_angle(best_kpts)
                 mid_sh = ((best_kpts[5] + best_kpts[6]) / 2).astype(int)
                 mid_hp = ((best_kpts[11] + best_kpts[12]) / 2).astype(int)
@@ -381,6 +382,9 @@ def process_video(job_id: str):
 @modal.concurrent(max_inputs=20)
 @modal.asgi_app()
 def web():
+    import hashlib
+    import hmac
+    import time
     from fastapi import FastAPI, File, HTTPException, Request, UploadFile
     from fastapi.middleware.cors import CORSMiddleware
     from fastapi.responses import FileResponse, JSONResponse
@@ -408,18 +412,52 @@ def web():
     API_SECRET = os.environ.get("API_SECRET")  # set in Modal dashboard
 
     def check_api_key(request: Request):
-        """Raises 403 if API_SECRET is configured and the header doesn't match."""
+        """Raises 403 if API_SECRET is configured and the header doesn't match.
+        Used for internal Vercel-to-Modal routes (status, download) where the
+        secret is never exposed to the browser.
+        """
         if API_SECRET:
             key = request.headers.get("X-API-Key", "")
             if key != API_SECRET:
                 raise HTTPException(status_code=403, detail="Invalid or missing API key.")
+
+    def check_upload_token(request: Request):
+        """Verifies a short-lived HMAC-SHA256 upload token minted by the Vercel
+        /upload-token endpoint.  Token format: "<expires_unix>.<hex_hmac>"
+
+        This lets the browser upload directly to Modal (no Vercel 4.5 MB limit)
+        without ever seeing the real API_SECRET.
+        """
+        if not API_SECRET:
+            return  # auth disabled in local dev
+
+        token = request.headers.get("X-Upload-Token", "")
+        try:
+            payload, sig = token.rsplit(".", 1)
+        except ValueError:
+            raise HTTPException(status_code=403, detail="Invalid upload token.")
+
+        # 1. Verify HMAC
+        expected = hmac.new(
+            API_SECRET.encode(), payload.encode(), hashlib.sha256
+        ).hexdigest()
+        if not hmac.compare_digest(expected, sig):
+            raise HTTPException(status_code=403, detail="Invalid upload token.")
+
+        # 2. Verify expiry
+        try:
+            expires = int(payload)
+        except ValueError:
+            raise HTTPException(status_code=403, detail="Invalid upload token.")
+        if time.time() > expires:
+            raise HTTPException(status_code=403, detail="Upload token expired.")
 
     # ── Routes ────────────────────────────────────────────────────────────────
 
     @api.post("/analyze")
     @limiter.limit("5/hour")
     async def analyze(request: Request, file: UploadFile = File(...)):
-        check_api_key(request)
+        check_upload_token(request)
 
         if not file.filename.lower().endswith((".mp4", ".mov", ".avi", ".mkv")):
             raise HTTPException(400, "Please upload an MP4, MOV, AVI or MKV file.")
@@ -441,7 +479,8 @@ def web():
         return JSONResponse({"job_id": job_id})
 
     @api.get("/status/{job_id}")
-    async def status(job_id: str):
+    async def status(job_id: str, request: Request):
+        check_api_key(request)
         volume.reload()
         status_file = VOLUME_PATH / job_id / "status.txt"
         if not status_file.exists():
@@ -459,7 +498,8 @@ def web():
             return {"status": "queued", "progress": 0}
 
     @api.get("/download/{job_id}")
-    async def download(job_id: str):
+    async def download(job_id: str, request: Request):
+        check_api_key(request)
         volume.reload()
         output = VOLUME_PATH / job_id / "output.mp4"
         if not output.exists():

@@ -754,7 +754,20 @@
     formData.append("file", selectedFile);
 
     try {
-      const res  = await fetch(`/analyze`, { method: "POST", body: formData });
+      // Step 1: fetch a short-lived upload token from Vercel.
+      // The real API_SECRET never leaves the server — the browser only
+      // receives a 5-minute HMAC token that Modal verifies independently.
+      const tokenRes = await fetch("/upload-token");
+      if (!tokenRes.ok) throw new Error("Could not obtain upload token.");
+      const { upload_url, token } = await tokenRes.json();
+
+      // Step 2: POST the file directly to Modal using the token.
+      // This bypasses Vercel entirely so there is no 4.5 MB size limit.
+      const res  = await fetch(upload_url, {
+        method:  "POST",
+        headers: { "X-Upload-Token": token },
+        body:    formData,
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || "Upload failed");
 

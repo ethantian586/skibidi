@@ -6,9 +6,9 @@
     }
   },
   "routes": [
-    { "src": "/analyze",           "dest": "/api/analyze.js"              },
-    { "src": "/status/(.*)",       "dest": "/api/status/[jobId].js?jobId=$1" },
+    { "src": "/upload-token",      "dest": "/api/upload-token.js"             },
+    { "src": "/status/(.*)",       "dest": "/api/status/[jobId].js?jobId=$1"  },
     { "src": "/download/(.*)",     "dest": "/api/download/[jobId].js?jobId=$1" },
-    { "src": "/(.*)",              "dest": "/index.html"                  }
+    { "src": "/(.*)",              "dest": "/index.html"                       }
   ]
 }
