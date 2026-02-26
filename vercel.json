@@ -9,6 +9,7 @@
     { "src": "/upload-token",      "dest": "/api/upload-token.js"             },
     { "src": "/status/(.*)",       "dest": "/api/status/[jobId].js?jobId=$1"  },
     { "src": "/download/(.*)",     "dest": "/api/download/[jobId].js?jobId=$1" },
+    { "src": "/analysis-data/(.*)", "dest": "/api/analysis/[jobId].js?jobId=$1" },
     { "src": "/analysis.html",    "dest": "/analysis.html"                    },
     { "src": "/(.*)",              "dest": "/index.html"                       }
   ]

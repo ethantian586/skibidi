@@ -18,6 +18,8 @@
     --muted:   #44445a;
     --accent:  #e8ff47;
     --cyan:    #00f5ff;
+    --purple:  #6366f1;
+    --purple-border: rgba(99, 102, 241, 0.5);
   }
 
   body {
@@ -29,7 +31,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 40px 24px;
+    padding: 32px 24px;
     background-image:
       linear-gradient(rgba(0,245,255,0.03) 1px, transparent 1px),
       linear-gradient(90deg, rgba(0,245,255,0.03) 1px, transparent 1px);
@@ -43,14 +45,14 @@
     letter-spacing: 0.4em;
     text-transform: uppercase;
     color: var(--cyan);
-    margin-bottom: 56px;
+    margin-bottom: 36px;
     opacity: 0.7;
     text-decoration: none;
   }
 
   .container {
     width: 100%;
-    max-width: 720px;
+    max-width: 1100px;
     animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
@@ -59,8 +61,167 @@
     to   { opacity: 1; transform: translateY(0); }
   }
 
-  #analysis-content {
-    /* Analysis content will be added here later */
+  /* ── Loading state ── */
+  .loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    padding: 80px 0;
+  }
+  .loading.hidden { display: none; }
+
+  .loading-spinner {
+    width: 40px; height: 40px;
+    border: 2px solid var(--border);
+    border-top-color: var(--cyan);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  /* ── Kinogram section ── */
+  .kinogram { display: none; }
+  .kinogram.visible { display: block; }
+
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text);
+    margin-bottom: 20px;
+    background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.5) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Phase labels row */
+  .phase-labels {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .phase-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-align: center;
+    color: var(--muted);
+  }
+
+  /* Filmstrip grid */
+  .filmstrip {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .frame-cell {
+    aspect-ratio: 16 / 10;
+    background: var(--surface);
+    border: 2px solid var(--purple-border);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .frame-cell img,
+  .frame-cell canvas {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* Placeholder skeleton while loading frames */
+  .frame-cell .placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, var(--surface) 25%, #151520 50%, var(--surface) 75%);
+    background-size: 200% 100%;
+    animation: shimmer-load 1.5s infinite;
+  }
+
+  @keyframes shimmer-load {
+    from { background-position: 200% 0; }
+    to   { background-position: -200% 0; }
+  }
+
+  /* Row labels */
+  .row-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    margin-bottom: 14px;
+    text-transform: uppercase;
+  }
+
+  /* ── Error state ── */
+  .error-state {
+    display: none;
+    text-align: center;
+    padding: 60px 0;
+  }
+  .error-state.visible { display: block; }
+  .error-state p {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.78rem;
+    color: #ff7788;
+    margin-bottom: 20px;
+  }
+  .error-state a {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.78rem;
+    color: var(--cyan);
+    text-decoration: none;
+    border: 1px solid var(--cyan);
+    padding: 10px 24px;
+    transition: background 0.2s, color 0.2s;
+  }
+  .error-state a:hover {
+    background: var(--cyan);
+    color: var(--bg);
+  }
+
+  /* ── Back link ── */
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--muted);
+    text-decoration: none;
+    margin-bottom: 28px;
+    letter-spacing: 0.06em;
+    transition: color 0.2s;
+  }
+  .back-link:hover { color: var(--cyan); }
+
+  @media (max-width: 700px) {
+    .phase-labels, .filmstrip {
+      grid-template-columns: repeat(3, 1fr);
+    }
   }
 </style>
 </head>
@@ -69,14 +230,287 @@
 <a class="logo" href="/">Stridelab</a>
 
 <div class="container">
-  <div id="analysis-content">
-    <!-- Analysis content will go here -->
+  <a class="back-link" href="/">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="15 18 9 12 15 6"/>
+    </svg>
+    Back
+  </a>
+
+  <!-- Loading -->
+  <div class="loading" id="loading">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Loading analysis…</div>
+  </div>
+
+  <!-- Error -->
+  <div class="error-state" id="error-state">
+    <p id="error-text">Could not load analysis data.</p>
+    <a href="/">Upload another video</a>
+  </div>
+
+  <!-- Kinogram -->
+  <div class="kinogram" id="kinogram">
+    <div class="section-title">Running Kinogram</div>
+
+    <!-- Phase column headers -->
+    <div class="phase-labels">
+      <div class="phase-label">MVP</div>
+      <div class="phase-label">Strike</div>
+      <div class="phase-label">Touch Down</div>
+      <div class="phase-label">Full Support</div>
+      <div class="phase-label">Mid Swing</div>
+      <div class="phase-label">Toe Off</div>
+    </div>
+
+    <!-- Row 1: Stride 1 -->
+    <div class="row-label" id="row1-label">Stride 1</div>
+    <div class="filmstrip" id="filmstrip-row1">
+      <div class="frame-cell"><div class="placeholder"></div></div>
+      <div class="frame-cell"><div class="placeholder"></div></div>
+      <div class="frame-cell"><div class="placeholder"></div></div>
+      <div class="frame-cell"><div class="placeholder"></div></div>
+      <div class="frame-cell"><div class="placeholder"></div></div>
+      <div class="frame-cell"><div class="placeholder"></div></div>
+    </div>
+
+    <!-- Row 2: Stride 2 -->
+    <div class="row-label" id="row2-label">Stride 2</div>
+    <div class="filmstrip" id="filmstrip-row2">
+      <div class="frame-cell"><div class="placeholder"></div></div>
+      <div class="frame-cell"><div class="placeholder"></div></div>
+      <div class="frame-cell"><div class="placeholder"></div></div>
+      <div class="frame-cell"><div class="placeholder"></div></div>
+      <div class="frame-cell"><div class="placeholder"></div></div>
+      <div class="frame-cell"><div class="placeholder"></div></div>
+    </div>
   </div>
 </div>
 
+<!-- Hidden video for frame capture -->
+<video id="hidden-video" style="display:none;" crossorigin="anonymous" preload="auto"></video>
+
 <script>
   const params = new URLSearchParams(window.location.search);
-  const jobId = params.get("job");
+  const jobId  = params.get("job");
+
+  const PHASES = ["MVP", "Strike", "Touch Down", "Full Support", "Mid Swing", "Toe Off"];
+
+  // Approximate % positions within a gait cycle for each phase
+  const PHASE_OFFSETS = [0.0, 0.15, 0.25, 0.40, 0.65, 0.85];
+
+  const loadingEl  = document.getElementById("loading");
+  const errorEl    = document.getElementById("error-state");
+  const errorText  = document.getElementById("error-text");
+  const kinogramEl = document.getElementById("kinogram");
+  const video      = document.getElementById("hidden-video");
+
+  function showError(msg) {
+    loadingEl.classList.add("hidden");
+    errorText.textContent = msg;
+    errorEl.classList.add("visible");
+  }
+
+  // ── Find peaks in an angle time-series (local maxima) ──
+  function findPeaks(values, minDistance) {
+    const peaks = [];
+    for (let i = 1; i < values.length - 1; i++) {
+      if (values[i] > values[i - 1] && values[i] > values[i + 1]) {
+        // Enforce minimum distance between peaks
+        if (peaks.length === 0 || (i - peaks[peaks.length - 1]) >= minDistance) {
+          peaks.push(i);
+        }
+      }
+    }
+    return peaks;
+  }
+
+  // ── Detect gait cycles from hip angle data ──
+  function detectGaitCycles(frames, angleKey, fps) {
+    // Extract the angle values, replacing nulls with interpolated values
+    const values = frames.map(f => f.angles[angleKey]);
+
+    // Simple interpolation for null values
+    for (let i = 0; i < values.length; i++) {
+      if (values[i] === null || values[i] === undefined) {
+        // Find nearest non-null before and after
+        let before = i - 1;
+        while (before >= 0 && values[before] === null) before--;
+        let after = i + 1;
+        while (after < values.length && values[after] === null) after++;
+
+        if (before >= 0 && after < values.length) {
+          const t = (i - before) / (after - before);
+          values[i] = values[before] + t * (values[after] - values[before]);
+        } else if (before >= 0) {
+          values[i] = values[before];
+        } else if (after < values.length) {
+          values[i] = values[after];
+        } else {
+          values[i] = 0;
+        }
+      }
+    }
+
+    // Smooth the signal a bit to reduce noise
+    const smoothed = [];
+    const w = 3;
+    for (let i = 0; i < values.length; i++) {
+      let sum = 0, count = 0;
+      for (let j = Math.max(0, i - w); j <= Math.min(values.length - 1, i + w); j++) {
+        sum += values[j];
+        count++;
+      }
+      smoothed.push(sum / count);
+    }
+
+    // Find peaks (max hip flexion = start of each stride)
+    // Minimum distance between peaks: ~0.25s of frames (to avoid double-counting)
+    const minDist = Math.max(5, Math.floor(fps * 0.25));
+    const peaks = findPeaks(smoothed, minDist);
+
+    // Build cycles: each cycle goes from one peak to the next
+    const cycles = [];
+    for (let i = 0; i < peaks.length - 1; i++) {
+      const startFrame = peaks[i];
+      const endFrame   = peaks[i + 1];
+      const duration   = endFrame - startFrame;
+
+      // Only consider cycles that are reasonable length (0.3s - 1.5s)
+      const durationSec = duration / fps;
+      if (durationSec >= 0.3 && durationSec <= 1.5) {
+        cycles.push({ startFrame, endFrame, duration });
+      }
+    }
+
+    return cycles;
+  }
+
+  // ── Capture a single frame from the video at a given time ──
+  function captureFrame(videoEl, time) {
+    return new Promise((resolve, reject) => {
+      const onSeeked = () => {
+        videoEl.removeEventListener("seeked", onSeeked);
+        try {
+          const canvas = document.createElement("canvas");
+          canvas.width  = videoEl.videoWidth;
+          canvas.height = videoEl.videoHeight;
+          canvas.getContext("2d").drawImage(videoEl, 0, 0);
+          resolve(canvas.toDataURL("image/jpeg", 0.85));
+        } catch (e) {
+          reject(e);
+        }
+      };
+      videoEl.addEventListener("seeked", onSeeked);
+      videoEl.currentTime = time;
+    });
+  }
+
+  // ── Fill a filmstrip row with captured frames ──
+  async function fillRow(rowEl, cycle, fps) {
+    const cells = rowEl.querySelectorAll(".frame-cell");
+
+    for (let i = 0; i < PHASE_OFFSETS.length; i++) {
+      const frameIdx = cycle.startFrame + Math.round(PHASE_OFFSETS[i] * cycle.duration);
+      const time     = frameIdx / fps;
+
+      try {
+        const dataUrl = await captureFrame(video, time);
+        const img     = document.createElement("img");
+        img.src       = dataUrl;
+        img.alt       = PHASES[i];
+        cells[i].innerHTML = "";
+        cells[i].appendChild(img);
+      } catch (e) {
+        console.warn(`Failed to capture frame for ${PHASES[i]}:`, e);
+      }
+    }
+  }
+
+  // ── Main ──
+  async function init() {
+    if (!jobId) {
+      showError("No job ID provided.");
+      return;
+    }
+
+    try {
+      // 1. Fetch analysis data
+      const res = await fetch(`/analysis-data/${jobId}`);
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.detail || "Analysis data not available.");
+      }
+      const analysis = await res.json();
+      const fps = analysis.fps || 30;
+      const frames = analysis.frames || [];
+
+      if (frames.length === 0) {
+        throw new Error("No frame data available.");
+      }
+
+      // 2. Detect gait cycles for right and left hip
+      const rCycles = detectGaitCycles(frames, "R Hip", fps);
+      const lCycles = detectGaitCycles(frames, "L Hip", fps);
+
+      // Pick the best cycle from each (prefer one in the middle of the video)
+      function pickBestCycle(cycles) {
+        if (cycles.length === 0) return null;
+        // Pick one roughly in the middle
+        return cycles[Math.floor(cycles.length / 2)];
+      }
+
+      const cycle1 = pickBestCycle(rCycles);
+      const cycle2 = pickBestCycle(lCycles);
+
+      if (!cycle1 && !cycle2) {
+        throw new Error("Could not detect running strides from the video data.");
+      }
+
+      // 3. Load the processed video
+      await new Promise((resolve, reject) => {
+        video.addEventListener("loadeddata", resolve, { once: true });
+        video.addEventListener("error", () => reject(new Error("Failed to load video.")), { once: true });
+        video.src = `/download/${jobId}`;
+      });
+
+      // Short pause to ensure video is seekable
+      await new Promise(r => setTimeout(r, 500));
+
+      // 4. Show kinogram section
+      loadingEl.classList.add("hidden");
+      kinogramEl.classList.add("visible");
+
+      // 5. Capture frames for each row
+      const row1El = document.getElementById("filmstrip-row1");
+      const row2El = document.getElementById("filmstrip-row2");
+      const row1Label = document.getElementById("row1-label");
+      const row2Label = document.getElementById("row2-label");
+
+      if (cycle1) {
+        row1Label.textContent = "Stride 1 — Right";
+        await fillRow(row1El, cycle1, fps);
+      }
+
+      if (cycle2) {
+        row2Label.textContent = "Stride 2 — Left";
+        await fillRow(row2El, cycle2, fps);
+      } else if (cycle1 && rCycles.length > 1) {
+        // Fallback: use a different right hip cycle for row 2
+        const alt = rCycles[Math.floor(rCycles.length / 2) + 1] || rCycles[0];
+        if (alt !== cycle1) {
+          row2Label.textContent = "Stride 2 — Right";
+          await fillRow(row2El, alt, fps);
+        }
+      }
+
+    } catch (err) {
+      console.error(err);
+      showError(err.message);
+    }
+  }
+
+  init();
 </script>
 </body>
 </html>
