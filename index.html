@@ -263,6 +263,26 @@
   }
   .btn-another:hover { border-color: var(--text); color: var(--text); }
 
+  .btn-analysis {
+    padding: 12px 20px;
+    background: none;
+    color: #00e5ff;
+    border: 1px solid #00e5ff;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+  }
+  .btn-analysis:hover { background: #00e5ff; color: #0a0a0a; }
+
   @media (max-width: 480px) {
     body { justify-content: flex-start; padding-top: 60px; }
     .logo { margin-bottom: 40px; }
@@ -332,6 +352,12 @@
           </svg>
           Download
         </a>
+        <a class="btn-analysis" id="btn-analysis" href="#">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 3v18h18"/><path d="M7 16l4-8 4 4 4-6"/>
+          </svg>
+          Analysis
+        </a>
         <button class="btn-another" id="btn-another">Analyze another</button>
       </div>
     </div>
@@ -362,6 +388,7 @@
   const resultVideo     = document.getElementById("result-video");
   const btnDownload     = document.getElementById("btn-download");
   const btnAnother      = document.getElementById("btn-another");
+  const btnAnalysis     = document.getElementById("btn-analysis");
 
   function formatBytes(b) {
     return b < 1024 * 1024
@@ -479,6 +506,7 @@
     resultVideo.src  = url;
     btnDownload.href = url;
     btnDownload.setAttribute("download", `sprint_${jobId.slice(0, 8)}.mp4`);
+    btnAnalysis.href = `/analysis.html?job=${jobId}`;
     progressSection.classList.remove("visible");
     resultSection.classList.add("visible");
   }
