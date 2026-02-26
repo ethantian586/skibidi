@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "functions": {
+    "api/**/*.js": {
+      "maxDuration": 30
+    }
+  },
+  "routes": [
+    { "src": "/analyze",           "dest": "/api/analyze.js"              },
+    { "src": "/status/(.*)",       "dest": "/api/status/[jobId].js?jobId=$1" },
+    { "src": "/download/(.*)",     "dest": "/api/download/[jobId].js?jobId=$1" },
+    { "src": "/(.*)",              "dest": "/index.html"                  }
+  ]
+}
