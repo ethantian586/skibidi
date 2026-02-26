@@ -35,7 +35,7 @@ app = modal.App("sprint-analyzer")
 # GPU image — installs everything needed at build time
 gpu_image = (
     modal.Image.debian_slim(python_version="3.11")
-    .apt_install("libgl1-mesa-glx", "libglib2.0-0")
+    .apt_install("libgl1-mesa-glx", "libglib2.0-0", "ffmpeg")
     .pip_install(
         "ultralytics>=8.4.0",
         "numpy",
@@ -343,6 +343,29 @@ def process_video(job_id: str):
 
     cap2.release()
     writer.release()
+
+    # Re-encode to H.264 so the video is playable in browsers.
+    # mp4v (the OpenCV default) is not supported by most web browsers;
+    # H.264 is the universal baseline codec for HTML5 <video>.
+    import subprocess
+    web_path = job_dir / "output_web.mp4"
+    subprocess.run(
+        [
+            "ffmpeg", "-y",
+            "-i", str(output_path),
+            "-vcodec", "libx264",
+            "-crf", "23",
+            "-preset", "fast",
+            "-pix_fmt", "yuv420p",      # required for broad browser support
+            "-movflags", "+faststart",  # moov atom at front for streaming/seek
+            str(web_path),
+        ],
+        check=True,
+        capture_output=True,
+    )
+    # Replace the raw mp4v output with the web-compatible H.264 version
+    web_path.replace(output_path)
+
     volume.commit()
     write_status("done")
 
