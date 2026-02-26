@@ -18,6 +18,7 @@
     --accent:  #e8ff47;
     --cyan:    #00e5ff;
     --orange:  #ff6b35;
+    --green:   #4caf81;
   }
 
   body {
@@ -26,7 +27,6 @@
     font-family: 'Inter', sans-serif;
     font-weight: 300;
     min-height: 100vh;
-    padding: 0;
   }
 
   .header {
@@ -38,27 +38,21 @@
   }
 
   .logo {
-    font-size: 0.8rem;
-    font-weight: 500;
-    letter-spacing: 0.25em;
-    text-transform: uppercase;
-    color: var(--muted);
-    text-decoration: none;
+    font-size: 0.8rem; font-weight: 500;
+    letter-spacing: 0.25em; text-transform: uppercase;
+    color: var(--muted); text-decoration: none;
   }
 
   .btn-back {
-    font-size: 0.75rem;
-    color: var(--muted);
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    gap: 6px;
+    font-size: 0.75rem; color: var(--muted);
+    text-decoration: none; display: flex;
+    align-items: center; gap: 6px;
     transition: color 0.15s;
   }
   .btn-back:hover { color: var(--text); }
 
   .page {
-    max-width: 640px;
+    max-width: 720px;
     margin: 0 auto;
     padding: 48px 24px 80px;
     animation: fadeUp 0.5s ease both;
@@ -69,240 +63,118 @@
     to   { opacity: 1; transform: translateY(0); }
   }
 
-  .page h1 {
-    font-size: 1.6rem;
-    font-weight: 300;
-    letter-spacing: -0.02em;
-    margin-bottom: 6px;
-  }
+  .page h1 { font-size: 1.6rem; font-weight: 300; letter-spacing: -0.02em; margin-bottom: 6px; }
+  .sub-info { font-size: 0.75rem; color: var(--muted); margin-bottom: 36px; }
 
-  .job-id {
-    font-size: 0.75rem;
-    color: var(--muted);
-    margin-bottom: 36px;
-  }
-
+  /* Video */
   .video-wrap {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    overflow: hidden;
-    margin-bottom: 32px;
+    background: var(--surface); border: 1px solid var(--border);
+    overflow: hidden; margin-bottom: 32px;
   }
-
   .video-wrap video { width: 100%; display: block; }
-
   .video-caption {
-    padding: 10px 14px;
-    border-top: 1px solid var(--border);
-    font-size: 0.72rem;
-    color: var(--muted);
+    padding: 10px 14px; border-top: 1px solid var(--border);
+    font-size: 0.72rem; color: var(--muted);
   }
 
+  /* Section */
   .section-label {
-    font-size: 0.7rem;
-    font-weight: 500;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin: 36px 0 18px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
+    font-size: 0.7rem; font-weight: 500; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--muted);
+    margin: 36px 0 18px; display: flex; align-items: center; gap: 12px;
   }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
-  .section-label::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border);
+  /* Stats */
+  .stats-row {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 10px; margin-bottom: 8px;
   }
-
-  .metrics {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 8px;
+  .stat-card { padding: 16px; background: var(--surface); border: 1px solid var(--border); }
+  .stat-val {
+    font-size: 1.5rem; font-weight: 300; letter-spacing: -0.03em;
+    color: var(--accent); line-height: 1; margin-bottom: 3px;
   }
+  .stat-label { font-size: 0.68rem; color: var(--muted); }
 
-  .metric {
-    padding: 20px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    transition: border-color 0.15s;
+  /* Angle table */
+  .angle-table { width: 100%; border-collapse: collapse; }
+  .angle-table th {
+    text-align: left; font-size: 0.68rem; font-weight: 500;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--muted); padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
   }
-
-  .metric:hover { border-color: var(--accent); }
-
-  .metric-val {
-    font-size: 1.8rem;
-    font-weight: 300;
-    letter-spacing: -0.03em;
-    color: var(--accent);
-    line-height: 1;
-    margin-bottom: 4px;
+  .angle-table td {
+    font-size: 0.85rem; padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
   }
+  .angle-table tr:last-child td { border-bottom: none; }
+  .angle-table .name { font-weight: 400; }
+  .angle-table .val  { color: var(--accent); font-weight: 400; }
+  .angle-table .range { color: var(--muted); font-size: 0.78rem; }
+  .bar-cell { width: 30%; }
+  .mini-bar-track { height: 4px; background: var(--border); overflow: hidden; }
+  .mini-bar-fill { height: 100%; transition: width 0.8s ease; }
+  .mini-bar-fill.low  { background: var(--cyan); }
+  .mini-bar-fill.mid  { background: var(--accent); }
+  .mini-bar-fill.high { background: var(--orange); }
 
-  .metric-label {
-    font-size: 0.7rem;
-    color: var(--muted);
-    letter-spacing: 0.04em;
+  /* Chart */
+  .chart-wrap {
+    background: var(--surface); border: 1px solid var(--border);
+    padding: 20px; overflow-x: auto;
   }
-
-  .metric-sub {
-    font-size: 0.72rem;
-    color: var(--cyan);
-    margin-top: 6px;
-    font-weight: 500;
+  canvas { display: block; }
+  .chart-legend {
+    display: flex; flex-wrap: wrap; gap: 14px; margin-top: 14px;
   }
-
-  .angle-row {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    margin-bottom: 12px;
+  .legend-item {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 0.7rem; color: var(--muted); cursor: pointer;
+    transition: opacity 0.15s;
   }
+  .legend-item.off { opacity: 0.25; }
+  .legend-dot { width: 8px; height: 8px; flex-shrink: 0; }
 
-  .angle-name {
-    font-size: 0.78rem;
-    color: var(--text);
-    min-width: 80px;
-    text-align: right;
-  }
-
-  .angle-track {
-    flex: 1;
-    height: 4px;
-    background: var(--border);
-    overflow: hidden;
-  }
-
-  .angle-fill {
-    height: 100%;
-    transition: width 0.8s ease;
-  }
-
-  .angle-fill.low  { background: var(--cyan); }
-  .angle-fill.mid  { background: var(--accent); }
-  .angle-fill.high { background: var(--orange); }
-
-  .angle-val {
-    font-size: 1rem;
-    font-weight: 400;
-    min-width: 48px;
-    color: #fff;
-  }
-
-  .insight {
-    display: flex;
-    gap: 14px;
-    margin-bottom: 16px;
-    align-items: flex-start;
-  }
-
-  .insight-num {
-    width: 28px;
-    height: 28px;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid var(--border);
-    font-size: 0.68rem;
-    font-weight: 500;
-    color: var(--cyan);
-  }
-
-  .insight-text {
-    font-size: 0.85rem;
-    line-height: 1.6;
-    color: var(--muted);
-  }
-
-  .insight-text strong {
-    color: var(--text);
-    font-weight: 400;
-  }
-
+  /* Actions */
   .actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 36px;
-    padding-top: 24px;
-    border-top: 1px solid var(--border);
+    display: flex; gap: 10px; margin-top: 36px;
+    padding-top: 24px; border-top: 1px solid var(--border);
   }
-
   .btn-dl {
-    flex: 1;
-    padding: 14px;
-    background: var(--accent);
-    color: #0a0a0a;
-    border: none;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.78rem;
-    font-weight: 500;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    cursor: pointer;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
+    flex: 1; padding: 14px; background: var(--accent); color: #0a0a0a;
+    border: none; font-family: 'Inter', sans-serif; font-size: 0.78rem;
+    font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase;
+    cursor: pointer; text-decoration: none;
+    display: flex; align-items: center; justify-content: center; gap: 7px;
     transition: background 0.15s;
   }
   .btn-dl:hover { background: #d4eb3a; }
-
-  .btn-back-bottom {
-    padding: 14px 24px;
-    background: none;
-    color: var(--muted);
-    border: 1px solid var(--border);
-    font-family: 'Inter', sans-serif;
-    font-size: 0.78rem;
-    cursor: pointer;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: border-color 0.15s, color 0.15s;
-    white-space: nowrap;
+  .btn-secondary {
+    padding: 14px 24px; background: none; color: var(--muted);
+    border: 1px solid var(--border); font-family: 'Inter', sans-serif;
+    font-size: 0.78rem; cursor: pointer; text-decoration: none;
+    display: flex; align-items: center; justify-content: center;
+    transition: border-color 0.15s, color 0.15s; white-space: nowrap;
   }
-  .btn-back-bottom:hover { border-color: var(--text); color: var(--text); }
+  .btn-secondary:hover { border-color: var(--text); color: var(--text); }
 
-  .loading {
-    text-align: center;
-    padding: 80px 0;
-  }
-
+  /* Loading / error */
+  .status-msg { text-align: center; padding: 80px 0; }
   .spinner {
-    width: 28px;
-    height: 28px;
-    border: 1.5px solid var(--border);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
+    width: 28px; height: 28px;
+    border: 1.5px solid var(--border); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin 0.7s linear infinite;
     margin: 0 auto 16px;
   }
-
   @keyframes spin { to { transform: rotate(360deg); } }
+  .status-msg p { font-size: 0.78rem; color: var(--muted); }
+  .status-msg.error p { color: var(--orange); }
+  .status-msg a { color: var(--cyan); }
 
-  .loading-text {
-    font-size: 0.78rem;
-    color: var(--muted);
-  }
-
-  .error-text {
-    text-align: center;
-    padding: 80px 0;
-    font-size: 0.85rem;
-    color: var(--orange);
-  }
-
-  .error-text a { color: var(--cyan); }
-
-  @media (max-width: 480px) {
-    .metrics { grid-template-columns: 1fr; }
-    .angle-name { min-width: 60px; font-size: 0.72rem; }
+  @media (max-width: 560px) {
+    .stats-row { grid-template-columns: 1fr 1fr; }
   }
 </style>
 </head>
@@ -320,148 +192,222 @@
 
 <div class="page">
   <h1>Sprint analysis</h1>
-  <div class="job-id" id="job-id">Loading…</div>
-
-  <div id="main-content">
-    <div class="loading" id="loading">
+  <div class="sub-info" id="sub-info">Loading…</div>
+  <div id="content">
+    <div class="status-msg" id="loader">
       <div class="spinner"></div>
-      <div class="loading-text">Loading analysis…</div>
+      <p>Fetching analysis data from server…</p>
     </div>
   </div>
 </div>
 
 <script>
-  const params  = new URLSearchParams(window.location.search);
-  const jobId   = params.get("job");
-  const main    = document.getElementById("main-content");
-  const jobIdEl = document.getElementById("job-id");
+const params = new URLSearchParams(window.location.search);
+const jobId  = params.get("job");
+const contentEl = document.getElementById("content");
+const subInfo   = document.getElementById("sub-info");
 
-  if (!jobId) {
-    jobIdEl.textContent = "";
-    main.innerHTML = '<div class="error-text">No job ID found. <a href="/">Go back</a> and analyze a sprint first.</div>';
-  } else {
-    jobIdEl.textContent = `Job ${jobId.slice(0, 8)}…`;
-    load();
-  }
+if (!jobId) {
+  subInfo.textContent = "";
+  contentEl.innerHTML = '<div class="status-msg error"><p>No job ID. <a href="/">Go back</a> and analyze a sprint first.</p></div>';
+} else {
+  subInfo.textContent = `Job ${jobId.slice(0,8)}…`;
+  fetchAnalysis();
+}
 
-  async function load() {
-    try {
-      const res  = await fetch(`/status/${jobId}`);
-      const data = await res.json();
-
-      if (!res.ok) throw new Error("Job not found.");
-
-      if (data.status !== "done") {
-        main.innerHTML = `<div class="error-text">This job is still ${data.status === "queued" ? "queued" : "processing"}. Wait for it to finish, then refresh.</div>`;
-        return;
-      }
-
-      render(`/download/${jobId}`);
-    } catch (e) {
-      main.innerHTML = `<div class="error-text">${e.message}</div>`;
+async function fetchAnalysis() {
+  try {
+    const res = await fetch(`/analysis/${jobId}`);
+    if (res.status === 404) {
+      // Maybe job isn't done yet — check status
+      const sr = await fetch(`/status/${jobId}`);
+      const sd = await sr.json();
+      if (!sr.ok) throw new Error("Job not found. It may have expired.");
+      contentEl.innerHTML = `<div class="status-msg error"><p>Analysis not ready — job is still <strong>${sd.status}</strong>. Wait for it to finish then refresh.</p></div>`;
+      return;
     }
+    if (!res.ok) throw new Error("Failed to load analysis.");
+    const data = await res.json();
+    render(data);
+  } catch (e) {
+    contentEl.innerHTML = `<div class="status-msg error"><p>${e.message}</p></div>`;
   }
+}
 
-  function render(downloadUrl) {
-    main.innerHTML = `
-      <div class="video-wrap">
-        <video controls playsinline src="${downloadUrl}"></video>
-        <div class="video-caption">Annotated output · YOLO26x-pose · ByteTrack · Kalman + EMA</div>
-      </div>
+function render(data) {
+  const dlUrl = `/download/${jobId}`;
+  subInfo.textContent = `Job ${jobId.slice(0,8)}… · ${data.duration_s}s · ${data.total_frames} frames · ${data.width}×${data.height} · ${data.fps} fps`;
 
-      <div class="section-label">Pipeline</div>
+  // Build angle table rows
+  const angleNames = ["R Hip", "L Hip", "R Knee", "L Knee", "R Elbow", "L Elbow", "Trunk"];
+  let tableRows = "";
+  angleNames.forEach(name => {
+    const s = data.summary[name];
+    if (!s) {
+      tableRows += `<tr><td class="name">${name}</td><td class="val">—</td><td class="range">—</td><td class="bar-cell"><div class="mini-bar-track"><div class="mini-bar-fill" style="width:0%"></div></div></td></tr>`;
+      return;
+    }
+    const pct = Math.min((s.mean / 180) * 100, 100);
+    const cls = s.mean < 90 ? "low" : s.mean < 140 ? "mid" : "high";
+    tableRows += `<tr>
+      <td class="name">${name}</td>
+      <td class="val">${s.mean}°</td>
+      <td class="range">${s.min}° – ${s.max}° &nbsp;(±${s.std}°)</td>
+      <td class="bar-cell"><div class="mini-bar-track"><div class="mini-bar-fill ${cls}" data-pct="${pct}" style="width:0%"></div></div></td>
+    </tr>`;
+  });
 
-      <div class="metrics">
-        <div class="metric">
-          <div class="metric-val">YOLO26x</div>
-          <div class="metric-label">Pose model</div>
-          <div class="metric-sub">FP16 inference</div>
-        </div>
-        <div class="metric">
-          <div class="metric-val">17</div>
-          <div class="metric-label">Keypoints</div>
-          <div class="metric-sub">COCO skeleton</div>
-        </div>
-        <div class="metric">
-          <div class="metric-val">A10G</div>
-          <div class="metric-label">GPU</div>
-          <div class="metric-sub">24 GB VRAM</div>
-        </div>
-        <div class="metric">
-          <div class="metric-val">7</div>
-          <div class="metric-label">Joint angles</div>
-          <div class="metric-sub">Real-time overlay</div>
-        </div>
-      </div>
+  contentEl.innerHTML = `
+    <div class="video-wrap">
+      <video controls playsinline src="${dlUrl}"></video>
+      <div class="video-caption">Annotated output · YOLO26x-pose · ByteTrack · Kalman + EMA</div>
+    </div>
 
-      <div class="section-label">Tracked angles</div>
-      <div id="angle-bars"></div>
+    <div class="section-label">Video info</div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-val">${data.duration_s}s</div><div class="stat-label">Duration</div></div>
+      <div class="stat-card"><div class="stat-val">${data.total_frames}</div><div class="stat-label">Frames</div></div>
+      <div class="stat-card"><div class="stat-val">${data.fps}</div><div class="stat-label">FPS</div></div>
+      <div class="stat-card"><div class="stat-val">${data.width}×${data.height}</div><div class="stat-label">Resolution</div></div>
+    </div>
 
-      <div class="section-label">What's in the video</div>
+    <div class="section-label">Average joint angles</div>
+    <table class="angle-table">
+      <thead><tr><th>Joint</th><th>Mean</th><th>Range</th><th>Distribution</th></tr></thead>
+      <tbody>${tableRows}</tbody>
+    </table>
 
-      <div class="insight">
-        <div class="insight-num">01</div>
-        <div class="insight-text"><strong>Skeleton overlay</strong> — COCO-17 bones color-coded by side: green for left, blue for right, yellow for midline.</div>
-      </div>
-      <div class="insight">
-        <div class="insight-num">02</div>
-        <div class="insight-text"><strong>Joint angle HUD</strong> — Live readout of hip, knee, elbow and trunk angles. Sub-90° in green, above in blue.</div>
-      </div>
-      <div class="insight">
-        <div class="insight-num">03</div>
-        <div class="insight-text"><strong>Trunk lean</strong> — Yellow midline from shoulders to hips visualizes forward lean during acceleration and top speed.</div>
-      </div>
-      <div class="insight">
-        <div class="insight-num">04</div>
-        <div class="insight-text"><strong>Kalman + EMA smoothing</strong> — Per-keypoint Kalman filter then exponential moving average for jitter-free tracking.</div>
-      </div>
-      <div class="insight">
-        <div class="insight-num">05</div>
-        <div class="insight-text"><strong>Frame scrubbing</strong> — Pause and scrub the video to study individual stride phases in detail.</div>
-      </div>
+    <div class="section-label">Angles over time</div>
+    <div class="chart-wrap">
+      <canvas id="chart" height="260"></canvas>
+      <div class="chart-legend" id="chart-legend"></div>
+    </div>
 
-      <div class="actions">
-        <a class="btn-dl" href="${downloadUrl}" download="sprint_${jobId.slice(0,8)}.mp4">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-            <polyline points="7 10 12 15 17 10"/>
-            <line x1="12" y1="15" x2="12" y2="3"/>
-          </svg>
-          Download
-        </a>
-        <a class="btn-back-bottom" href="/">Analyze another</a>
-      </div>
-    `;
+    <div class="actions">
+      <a class="btn-dl" href="${dlUrl}" download="sprint_${jobId.slice(0,8)}.mp4">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Download video
+      </a>
+      <a class="btn-secondary" href="/">Analyze another</a>
+    </div>
+  `;
 
-    const angles = [
-      { name: "R Hip",   val: 130 },
-      { name: "L Hip",   val: 125 },
-      { name: "R Knee",  val: 155 },
-      { name: "L Knee",  val: 85  },
-      { name: "R Elbow", val: 90  },
-      { name: "L Elbow", val: 88  },
-      { name: "Trunk",   val: 12  },
-    ];
-
-    const container = document.getElementById("angle-bars");
-    angles.forEach(a => {
-      const pct = Math.min((a.val / 180) * 100, 100);
-      const cls = a.val < 90 ? "low" : a.val < 140 ? "mid" : "high";
-      const row = document.createElement("div");
-      row.className = "angle-row";
-      row.innerHTML = `
-        <span class="angle-name">${a.name}</span>
-        <div class="angle-track"><div class="angle-fill ${cls}" style="width:0%"></div></div>
-        <span class="angle-val">${a.val}°</span>
-      `;
-      container.appendChild(row);
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          row.querySelector(".angle-fill").style.width = pct + "%";
-        });
+  // Animate bars
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      document.querySelectorAll(".mini-bar-fill[data-pct]").forEach(el => {
+        el.style.width = el.dataset.pct + "%";
       });
     });
+  });
+
+  // Draw chart
+  drawChart(data);
+}
+
+// ── Canvas chart — no external dependencies ──────────────────────────────────
+function drawChart(data) {
+  const canvas = document.getElementById("chart");
+  const ctx    = canvas.getContext("2d");
+  const dpr    = window.devicePixelRatio || 1;
+
+  canvas.width  = canvas.clientWidth * dpr;
+  canvas.height = 260 * dpr;
+  ctx.scale(dpr, dpr);
+
+  const W = canvas.clientWidth;
+  const H = 260;
+  const PAD = { top: 16, right: 16, bottom: 32, left: 44 };
+  const plotW = W - PAD.left - PAD.right;
+  const plotH = H - PAD.top  - PAD.bottom;
+
+  const colors = {
+    "R Hip":   "#ff6b35",
+    "L Hip":   "#ff9f6b",
+    "R Knee":  "#00e5ff",
+    "L Knee":  "#66f0ff",
+    "R Elbow": "#e8ff47",
+    "L Elbow": "#c8dd3a",
+    "Trunk":   "#4caf81",
+  };
+
+  const angleNames = Object.keys(colors);
+  const hidden = new Set();
+
+  // Sample frames (draw max 300 points for performance)
+  const frames = data.frames;
+  const step   = Math.max(1, Math.floor(frames.length / 300));
+  const sampled = frames.filter((_, i) => i % step === 0);
+
+  const maxTime = sampled.length > 0 ? sampled[sampled.length - 1].time : 1;
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    // Grid
+    ctx.strokeStyle = "#1a1a1a";
+    ctx.lineWidth   = 1;
+    const yTicks = [0, 45, 90, 135, 180];
+    yTicks.forEach(v => {
+      const y = PAD.top + plotH - (v / 180) * plotH;
+      ctx.beginPath();
+      ctx.moveTo(PAD.left, y);
+      ctx.lineTo(PAD.left + plotW, y);
+      ctx.stroke();
+      ctx.fillStyle = "#444";
+      ctx.font = "10px Inter, sans-serif";
+      ctx.textAlign = "right";
+      ctx.fillText(v + "°", PAD.left - 6, y + 3);
+    });
+
+    // Time axis labels
+    ctx.fillStyle = "#444";
+    ctx.textAlign = "center";
+    const tStep = Math.ceil(maxTime / 5);
+    for (let t = 0; t <= maxTime; t += tStep) {
+      const x = PAD.left + (t / maxTime) * plotW;
+      ctx.fillText(t.toFixed(1) + "s", x, H - 8);
+    }
+
+    // Lines
+    angleNames.forEach(name => {
+      if (hidden.has(name)) return;
+      ctx.strokeStyle = colors[name];
+      ctx.lineWidth   = 1.5;
+      ctx.beginPath();
+      let started = false;
+
+      sampled.forEach(f => {
+        const v = f.angles[name];
+        if (v == null) return;
+        const x = PAD.left + (f.time / maxTime) * plotW;
+        const y = PAD.top + plotH - (v / 180) * plotH;
+        if (!started) { ctx.moveTo(x, y); started = true; }
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    });
   }
+
+  draw();
+
+  // Legend
+  const legendEl = document.getElementById("chart-legend");
+  angleNames.forEach(name => {
+    const item = document.createElement("div");
+    item.className = "legend-item";
+    item.innerHTML = `<span class="legend-dot" style="background:${colors[name]}"></span>${name}`;
+    item.addEventListener("click", () => {
+      if (hidden.has(name)) hidden.delete(name); else hidden.add(name);
+      item.classList.toggle("off");
+      draw();
+    });
+    legendEl.appendChild(item);
+  });
+}
 </script>
 </body>
 </html>

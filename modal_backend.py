@@ -21,6 +21,7 @@ Environment variables (set in Modal dashboard or via modal secret):
                      Defaults to * if not set.
 """
 
+import json
 import math
 import os
 import uuid
@@ -247,9 +248,13 @@ def process_video(job_id: str):
     job_dir     = VOLUME_PATH / job_id
     job_dir.mkdir(parents=True, exist_ok=True)  # safe no-op if already exists
 
-    input_path  = job_dir / "input.mp4"
-    output_path = job_dir / "output.mp4"
-    status_path = job_dir / "status.txt"
+    input_path    = job_dir / "input.mp4"
+    output_path   = job_dir / "output.mp4"
+    status_path   = job_dir / "status.txt"
+    analysis_path = job_dir / "analysis.json"
+
+    # Collect per-frame angle data for the analysis endpoint
+    frame_data = []
 
     def write_status(msg: str):
         status_path.write_text(msg)
@@ -333,6 +338,14 @@ def process_video(job_id: str):
 
             last_angles = smoother.update(raw)
 
+            # Record this frame's smoothed angles for the analysis JSON
+            frame_data.append({
+                "frame": frame_idx,
+                "time":  round(frame_idx / fps, 3),
+                "angles": {k: round(v, 1) if v is not None else None
+                           for k, v in last_angles.items()},
+            })
+
         draw_hud(frame, last_angles)
         pct = 100.0 * frame_idx / max(total, 1)
         draw_title(frame, pct)
@@ -366,6 +379,36 @@ def process_video(job_id: str):
     )
     # Replace the raw mp4v output with the web-compatible H.264 version
     web_path.replace(output_path)
+
+    # ── Build and save analysis JSON ──────────────────────────────────────────
+    angle_names = ["R Hip", "L Hip", "R Knee", "L Knee", "R Elbow", "L Elbow", "Trunk"]
+    summary = {}
+    for name in angle_names:
+        vals = [f["angles"].get(name) for f in frame_data
+                if f["angles"].get(name) is not None]
+        if vals:
+            import numpy as _np
+            arr = _np.array(vals)
+            summary[name] = {
+                "mean": round(float(arr.mean()), 1),
+                "min":  round(float(arr.min()), 1),
+                "max":  round(float(arr.max()), 1),
+                "std":  round(float(arr.std()), 1),
+            }
+        else:
+            summary[name] = None
+
+    analysis = {
+        "job_id":       job_id,
+        "fps":          round(fps, 2),
+        "total_frames": total,
+        "width":        width,
+        "height":       height,
+        "duration_s":   round(total / max(fps, 1), 2),
+        "summary":      summary,
+        "frames":       frame_data,
+    }
+    analysis_path.write_text(json.dumps(analysis))
 
     volume.commit()
     write_status("done")
@@ -509,5 +552,14 @@ def web():
             media_type="video/mp4",
             filename=f"sprint_analyzed_{job_id[:8]}.mp4",
         )
+
+    @api.get("/analysis/{job_id}")
+    async def get_analysis(job_id: str, request: Request):
+        check_api_key(request)
+        volume.reload()
+        path = VOLUME_PATH / job_id / "analysis.json"
+        if not path.exists():
+            raise HTTPException(404, "Analysis not ready yet.")
+        return JSONResponse(json.loads(path.read_text()))
 
     return api
