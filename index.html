@@ -33,7 +33,6 @@
     align-items: center;
     justify-content: center;
     padding: 40px 24px;
-    /* subtle grid bg */
     background-image:
       linear-gradient(rgba(0,245,255,0.03) 1px, transparent 1px),
       linear-gradient(90deg, rgba(0,245,255,0.03) 1px, transparent 1px);
@@ -49,10 +48,6 @@
     color: var(--cyan);
     margin-bottom: 56px;
     opacity: 0.7;
-    position: relative;
-  }
-  .logo::before {
-    content: '';
   }
 
   .card {
@@ -103,7 +98,6 @@
     overflow: hidden;
   }
 
-  /* corner accents */
   .drop-zone::before, .drop-zone::after {
     content: '';
     position: absolute;
@@ -244,22 +238,75 @@
   #progress-section.visible { display: block; }
 
   .progress-label {
-    font-size: 0.75rem;
-    letter-spacing: 0.14em;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
     text-transform: uppercase;
     color: var(--muted);
     margin-bottom: 32px;
   }
 
+  /* ── Warmup display (queued / loading_model) ── */
+  .warmup-display {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 28px;
+  }
+  .warmup-display.visible { display: flex; }
+
+  .warmup-icon svg {
+    width: 64px; height: 64px;
+    color: var(--cyan);
+    filter: drop-shadow(0 0 14px rgba(0,245,255,0.55));
+    animation: warmup-bob 1.9s ease-in-out infinite;
+  }
+  @keyframes warmup-bob {
+    0%, 100% { transform: translateY(0)   scale(0.96); filter: drop-shadow(0 0 8px  rgba(0,245,255,0.3)); }
+    50%       { transform: translateY(-6px) scale(1.04); filter: drop-shadow(0 0 22px rgba(0,245,255,0.8)); }
+  }
+
+  .warmup-word {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.55rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: linear-gradient(90deg, var(--cyan) 0%, var(--accent) 50%, var(--cyan) 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradient-slide 2.6s linear infinite;
+  }
+  @keyframes gradient-slide {
+    from { background-position: 0%   center; }
+    to   { background-position: 200% center; }
+  }
+
+  .warmup-sub {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    line-height: 1.8;
+  }
+  .warmup-sub .dots { display: inline-block; min-width: 1.5em; text-align: left; }
+
+  /* ── Processing display (active %) ── */
   .progress-pct {
+    display: none;
     font-size: 5rem;
     font-weight: 300;
     letter-spacing: -0.04em;
     line-height: 1;
     margin-bottom: 28px;
   }
+  .progress-pct.visible { display: block; }
   .progress-pct span { font-size: 2rem; color: var(--muted); }
 
+  /* ── Bar ── */
   .progress-bar-track {
     height: 1px;
     background: var(--border);
@@ -273,6 +320,19 @@
     background: var(--accent);
     transition: width 0.6s ease;
     width: 0%;
+    position: relative;
+  }
+
+  /* Indeterminate scan when warming up */
+  .progress-bar-fill.indeterminate {
+    background: var(--cyan);
+    transition: none;
+    animation: bar-scan 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  @keyframes bar-scan {
+    0%   { width: 28%; margin-left: 0%; }
+    50%  { width: 36%; margin-left: 55%; }
+    100% { width: 28%; margin-left: 0%; }
   }
 
   .progress-bar-fill::after {
@@ -282,13 +342,17 @@
     background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
     animation: shimmer 1.4s infinite;
   }
-
   @keyframes shimmer {
     from { transform: translateX(-80px); }
     to   { transform: translateX(80px); }
   }
 
-  .progress-sub { font-size: 0.78rem; color: var(--muted); }
+  .progress-sub {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+  }
 
   /* ── Result ── */
   #result-section { display: none; }
@@ -315,9 +379,9 @@
     background: var(--accent);
     color: #0a0a0a;
     border: none;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Syne', sans-serif;
     font-size: 0.78rem;
-    font-weight: 500;
+    font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     cursor: pointer;
@@ -336,30 +400,9 @@
     background: none;
     color: var(--accent);
     border: 1px solid var(--accent);
-    font-family: 'Inter', sans-serif;
+    font-family: 'Syne', sans-serif;
     font-size: 0.78rem;
-    font-weight: 500;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    cursor: pointer;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
-    transition: background 0.15s, color 0.15s;
-  }
-  .btn-analysis:hover { background: var(--accent); color: #0a0a0a; }
-
-  .btn-analysis {
-    flex: 1;
-    padding: 12px;
-    background: none;
-    color: var(--accent);
-    border: 1px solid var(--accent);
-    font-family: 'Inter', sans-serif;
-    font-size: 0.78rem;
-    font-weight: 500;
+    font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     cursor: pointer;
@@ -377,7 +420,7 @@
     background: none;
     color: var(--muted);
     border: 1px solid var(--border);
-    font-family: 'Inter', sans-serif;
+    font-family: 'Syne', sans-serif;
     font-size: 0.78rem;
     cursor: pointer;
     transition: border-color 0.15s, color 0.15s;
@@ -434,9 +477,32 @@
   <!-- Progress -->
   <section id="progress-section">
     <div class="progress-label" id="progress-stage">Processing</div>
-    <div class="progress-pct"><span id="progress-num">0</span><span>%</span></div>
+
+    <!-- Warmup state: shown during queued / loading_model -->
+    <div class="warmup-display" id="warmup-display">
+      <div class="warmup-icon">
+        <!-- Running figure SVG -->
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="13" cy="3.5" r="1.5"/>
+          <path d="M10 8.5l-3 8"/>
+          <path d="M10 8.5c1.5 1 3.5 1.5 5 1l-1.5 4"/>
+          <path d="M7 16.5l2-1.5 2 3"/>
+          <path d="M13.5 13.5l2 3.5"/>
+        </svg>
+      </div>
+      <div class="warmup-word" id="warmup-word">Warming Up</div>
+      <div class="warmup-sub" id="warmup-sub">
+        Getting things ready<span class="dots" id="warmup-dots"></span>
+      </div>
+    </div>
+
+    <!-- Processing state: shown when % > 0 -->
+    <div class="progress-pct" id="progress-pct">
+      <span id="progress-num">0</span><span>%</span>
+    </div>
+
     <div class="progress-bar-track">
-      <div class="progress-bar-fill" id="progress-bar"></div>
+      <div class="progress-bar-fill indeterminate" id="progress-bar"></div>
     </div>
     <div class="progress-sub" id="progress-sub">Starting…</div>
   </section>
@@ -471,6 +537,7 @@
   let selectedFile = null;
   let jobId        = null;
   let pollTimer    = null;
+  let dotsTimer    = null;
 
   const dropZone        = document.getElementById("drop-zone");
   const fileInput       = document.getElementById("file-input");
@@ -484,13 +551,72 @@
   const progressSection = document.getElementById("progress-section");
   const resultSection   = document.getElementById("result-section");
   const progressStage   = document.getElementById("progress-stage");
+  const progressPct     = document.getElementById("progress-pct");
   const progressNum     = document.getElementById("progress-num");
   const progressBar     = document.getElementById("progress-bar");
   const progressSub     = document.getElementById("progress-sub");
+  const warmupDisplay   = document.getElementById("warmup-display");
+  const warmupWord      = document.getElementById("warmup-word");
+  const warmupSub       = document.getElementById("warmup-sub");
+  const warmupDots      = document.getElementById("warmup-dots");
   const resultVideo     = document.getElementById("result-video");
   const btnDownload     = document.getElementById("btn-download");
   const btnAnalysis     = document.getElementById("btn-analysis");
   const btnAnother      = document.getElementById("btn-another");
+
+  // Cycling warmup messages
+  const WARMUP_MESSAGES = [
+    { word: "Warming Up",   sub: "Getting things ready" },
+    { word: "Getting Set",  sub: "Lacing up" },
+    { word: "Almost Ready", sub: "On your marks" },
+    { word: "Hold Tight",   sub: "Good things take a moment" },
+  ];
+  let warmupIdx = 0;
+  let warmupCycleTimer = null;
+
+  function startWarmupAnimation() {
+    // Animated dots: . .. ...
+    let dotCount = 0;
+    dotsTimer = setInterval(() => {
+      dotCount = (dotCount + 1) % 4;
+      warmupDots.textContent = ".".repeat(dotCount);
+    }, 500);
+
+    // Cycle through warmup phrases every ~3.5 s
+    warmupIdx = 0;
+    warmupCycleTimer = setInterval(() => {
+      warmupIdx = (warmupIdx + 1) % WARMUP_MESSAGES.length;
+      const { word, sub } = WARMUP_MESSAGES[warmupIdx];
+      // Fade via opacity trick
+      warmupWord.style.opacity = "0";
+      warmupSub.style.opacity  = "0";
+      setTimeout(() => {
+        warmupWord.textContent = word;
+        // Reconstruct sub with dots span
+        warmupSub.innerHTML = sub + '<span class="dots" id="warmup-dots"></span>';
+        // Re-grab dots reference after innerHTML rebuild
+        const newDots = warmupSub.querySelector(".dots");
+        warmupWord.style.opacity = "1";
+        warmupSub.style.opacity  = "1";
+      }, 300);
+    }, 3500);
+
+    // Smooth opacity transition
+    warmupWord.style.transition = "opacity 0.3s ease";
+    warmupSub.style.transition  = "opacity 0.3s ease";
+  }
+
+  function stopWarmupAnimation() {
+    clearInterval(dotsTimer);
+    clearInterval(warmupCycleTimer);
+  }
+
+  function enterProcessingMode() {
+    warmupDisplay.classList.remove("visible");
+    progressBar.classList.remove("indeterminate");
+    progressPct.classList.add("visible");
+    stopWarmupAnimation();
+  }
 
   function formatBytes(b) {
     return b < 1024 * 1024
@@ -545,12 +671,10 @@
     formData.append("file", selectedFile);
 
     try {
-      // Step 1: get a short-lived upload token (API_SECRET never leaves the server)
       const tokenRes = await fetch("/upload-token");
       if (!tokenRes.ok) throw new Error("Could not obtain upload token.");
       const { upload_url, token } = await tokenRes.json();
 
-      // Step 2: upload directly to Modal — bypasses Vercel's 4.5 MB limit
       const res  = await fetch(upload_url, {
         method:  "POST",
         headers: { "X-Upload-Token": token },
@@ -561,7 +685,14 @@
 
       jobId = data.job_id;
       uploadSection.style.display = "none";
+
+      // Start in warmup mode
+      progressStage.textContent = "Preparing";
+      warmupDisplay.classList.add("visible");
+      progressBar.classList.add("indeterminate");
+      progressPct.classList.remove("visible");
       progressSection.classList.add("visible");
+      startWarmupAnimation();
       startPolling();
 
     } catch (err) {
@@ -575,29 +706,42 @@
     pollTimer = setInterval(pollStatus, 2500);
   }
 
+  let wasWarmingUp = true;
+
   async function pollStatus() {
     try {
       const res  = await fetch(`/status/${jobId}`);
       const data = await res.json();
       const pct  = data.progress || 0;
 
-      progressBar.style.width = `${pct}%`;
-      progressNum.textContent  = pct.toFixed(0);
-
       const stages = {
-        queued:        "Starting…",
-        loading_model: "Loading model…",
-        processing:    "Analyzing…",
+        queued:        "Preparing",
+        loading_model: "Preparing",
+        processing:    "Analyzing",
         done:          "Done",
       };
 
       progressStage.textContent = stages[data.status] || data.status;
-      progressSub.textContent   = data.status === "processing"
-        ? `${pct.toFixed(1)}% complete`
-        : "";
+
+      if (data.status === "processing" || data.status === "done") {
+        // Switch from warmup to progress % display
+        if (wasWarmingUp) {
+          wasWarmingUp = false;
+          enterProcessingMode();
+        }
+        progressBar.style.width = `${pct}%`;
+        progressNum.textContent  = pct.toFixed(0);
+        progressSub.textContent  = data.status === "processing"
+          ? `${pct.toFixed(1)}% complete`
+          : "";
+      } else {
+        // Still warming up — bar stays indeterminate, no % shown
+        progressSub.textContent = "";
+      }
 
       if (data.status === "done") {
         clearInterval(pollTimer);
+        stopWarmupAnimation();
         showResult();
       }
     } catch (_) { /* retry on network blip */ }
@@ -614,14 +758,19 @@
   }
 
   btnAnother.addEventListener("click", () => {
-    jobId = null;
+    jobId        = null;
+    wasWarmingUp = true;
     clearFile();
+    stopWarmupAnimation();
     resultVideo.src = "";
     resultSection.classList.remove("visible");
     progressSection.classList.remove("visible");
     uploadSection.style.display = "";
+    progressBar.classList.add("indeterminate");
     progressBar.style.width = "0%";
     progressNum.textContent = "0";
+    progressPct.classList.remove("visible");
+    warmupDisplay.classList.remove("visible");
     btnAnalyze.disabled     = false;
     btnAnalyze.textContent  = "Analyze";
   });

@@ -215,7 +215,7 @@ def draw_hud(frame, angles):
 
 def draw_title(frame, progress_pct):
     import cv2
-    cv2.putText(frame, "Sprint Analyzer \u2014 YOLO26x GPU",
+    cv2.putText(frame, "teebs",
                 (15, 28), cv2.FONT_HERSHEY_DUPLEX, 0.6,
                 (255,220,50), 1, cv2.LINE_AA)
     cv2.putText(frame, f"{progress_pct:.0f}%",
