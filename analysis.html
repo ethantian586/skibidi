@@ -9,286 +9,278 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@300;400;700;800&display=swap" rel="stylesheet"/>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
   :root {
-    --bg:      #050507;
-    --surface: #0d0d12;
-    --border:  #1a1a24;
-    --text:    #e8e8f0;
-    --muted:   #44445a;
-    --accent:  #e8ff47;
-    --cyan:    #00f5ff;
-    --purple:  #6366f1;
-    --purple-border: rgba(99, 102, 241, 0.5);
+    --bg: #030308; --surface: #0a0a14; --border: #1a1a2e; --text: #e8e8f0;
+    --muted: #3a3a5c; --accent: #e8ff47; --cyan: #00f5ff; --purple: #6366f1;
+    --purple-border: rgba(99,102,241,0.45);
   }
-
   body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Syne', sans-serif;
-    font-weight: 300;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 32px 24px;
-    background-image:
-      linear-gradient(rgba(0,245,255,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,245,255,0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
+    background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif;
+    font-weight: 300; min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; padding: 32px 24px; position: relative; overflow: hidden;
   }
-
+  #bg-canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+  .aurora {
+    position: fixed; top: -30%; left: -20%; width: 140%; height: 70%;
+    background:
+      radial-gradient(ellipse 50% 60% at 30% 50%, rgba(99,102,241,0.08) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 60% at 70% 50%, rgba(0,245,255,0.06) 0%, transparent 70%);
+    animation: aurora-drift 12s ease-in-out infinite alternate;
+    pointer-events: none; z-index: 0; filter: blur(40px);
+  }
+  @keyframes aurora-drift {
+    0%   { transform: translateX(-5%) translateY(0%) rotate(-2deg); opacity: 0.6; }
+    33%  { transform: translateX(3%) translateY(3%) rotate(1deg); opacity: 1; }
+    66%  { transform: translateX(-2%) translateY(-2%) rotate(-1deg); opacity: 0.7; }
+    100% { transform: translateX(5%) translateY(1%) rotate(2deg); opacity: 0.9; }
+  }
+  body::after {
+    content: ''; position: fixed; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,245,255,0.008) 2px, rgba(0,245,255,0.008) 4px);
+    pointer-events: none; z-index: 9999;
+  }
+  .logo, .container { position: relative; z-index: 1; }
   .logo {
-    font-family: 'Space Mono', monospace;
-    font-size: 0.7rem;
-    font-weight: 400;
-    letter-spacing: 0.4em;
-    text-transform: uppercase;
-    color: var(--cyan);
-    margin-bottom: 36px;
-    opacity: 0.7;
-    text-decoration: none;
+    font-family: 'Space Mono', monospace; font-size: 0.7rem; font-weight: 400;
+    letter-spacing: 0.4em; text-transform: uppercase; color: var(--cyan);
+    margin-bottom: 36px; text-decoration: none;
+    text-shadow: 0 0 12px rgba(0,245,255,0.5); transition: text-shadow 0.3s;
   }
-
-  .container {
-    width: 100%;
-    max-width: 1100px;
-    animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  .logo:hover { text-shadow: 0 0 20px rgba(0,245,255,0.8); }
+  .container { width: 100%; max-width: 1100px; animation: fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) both; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+  .back-link {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: 'Space Mono', monospace; font-size: 0.62rem; color: var(--muted);
+    text-decoration: none; margin-bottom: 24px; letter-spacing: 0.08em;
+    text-transform: uppercase; transition: color 0.2s, text-shadow 0.2s;
   }
-
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(24px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  /* ── Loading state ── */
-  .loading {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 18px;
-    padding: 80px 0;
-  }
+  .back-link:hover { color: var(--cyan); text-shadow: 0 0 8px rgba(0,245,255,0.4); }
+  .loading { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; padding: 100px 0; }
   .loading.hidden { display: none; }
-
   .loading-spinner {
-    width: 40px; height: 40px;
-    border: 2px solid var(--border);
-    border-top-color: var(--cyan);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
+    width: 48px; height: 48px; border: 2px solid transparent;
+    border-top-color: var(--cyan); border-right-color: rgba(99,102,241,0.5);
+    border-radius: 50%; animation: spin 0.7s linear infinite;
+    filter: drop-shadow(0 0 8px rgba(0,245,255,0.4));
   }
   @keyframes spin { to { transform: rotate(360deg); } }
-
   .loading-text {
-    font-family: 'Space Mono', monospace;
-    font-size: 0.72rem;
-    color: var(--muted);
-    letter-spacing: 0.1em;
+    font-family: 'Space Mono', monospace; font-size: 0.72rem; color: var(--cyan);
+    letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.7;
+    animation: pulse-text 2s ease-in-out infinite;
   }
-
-  /* ── Kinogram section ── */
+  @keyframes pulse-text { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
   .kinogram { display: none; }
   .kinogram.visible { display: block; }
-
+  .hud-panel {
+    background: linear-gradient(180deg, rgba(10,10,20,0.95) 0%, rgba(6,6,14,0.98) 100%);
+    border: 1px solid var(--border); padding: 28px 24px 24px; position: relative; margin-bottom: 0;
+  }
+  .hud-panel::before, .hud-panel::after {
+    content: ''; position: absolute; width: 20px; height: 20px;
+    border-color: var(--cyan); border-style: solid; opacity: 0.6;
+  }
+  .hud-panel::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+  .hud-panel::after  { top: -1px; right: -1px; border-width: 2px 2px 0 0; }
+  .hud-corners-bottom { position: absolute; bottom: 0; left: 0; right: 0; height: 0; pointer-events: none; }
+  .hud-corners-bottom::before, .hud-corners-bottom::after {
+    content: ''; position: absolute; width: 20px; height: 20px;
+    border-color: var(--cyan); border-style: solid; opacity: 0.6;
+  }
+  .hud-corners-bottom::before { bottom: 0; left: -1px; border-width: 0 0 2px 2px; }
+  .hud-corners-bottom::after  { bottom: 0; right: -1px; border-width: 0 2px 2px 0; }
+  .hud-panel .glow-line {
+    position: absolute; top: 0; left: 20px; right: 20px; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent); opacity: 0.3;
+  }
   .section-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 1.1rem;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--text);
-    margin-bottom: 20px;
-    background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.5) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 800;
+    letter-spacing: 0.12em; text-transform: uppercase; color: var(--cyan);
+    margin-bottom: 6px; text-shadow: 0 0 20px rgba(0,245,255,0.3);
+    display: flex; align-items: center; gap: 10px;
   }
-
-  /* Phase labels row */
-  .phase-labels {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 8px;
-    margin-bottom: 8px;
+  .section-title .tag {
+    font-family: 'Space Mono', monospace; font-size: 0.55rem; font-weight: 400;
+    color: var(--muted); background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.25);
+    padding: 3px 8px; letter-spacing: 0.1em; text-shadow: none;
   }
-
+  .section-subtitle {
+    font-family: 'Space Mono', monospace; font-size: 0.6rem; color: var(--muted);
+    letter-spacing: 0.1em; margin-bottom: 22px; text-transform: uppercase;
+  }
+  .phase-labels { display: grid; grid-template-columns: repeat(6,1fr); gap: 8px; margin-bottom: 10px; }
   .phase-label {
-    font-family: 'Syne', sans-serif;
-    font-size: 0.68rem;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    text-align: center;
-    color: var(--muted);
+    font-family: 'Space Mono', monospace; font-size: 0.58rem; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase; text-align: center;
+    color: var(--cyan); opacity: 0.7; padding-bottom: 6px; border-bottom: 1px solid rgba(0,245,255,0.1);
   }
-
-  /* Filmstrip grid */
-  .filmstrip {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 8px;
-    margin-bottom: 8px;
-  }
-
+  /* Detected badge — shown when a phase was located by the algorithm */
+  .phase-label.detected { opacity: 1; color: var(--accent); }
+  .filmstrip { display: grid; grid-template-columns: repeat(6,1fr); gap: 8px; margin-bottom: 10px; }
   .frame-cell {
-    aspect-ratio: 16 / 10;
-    background: var(--surface);
-    border: 2px solid var(--purple-border);
-    border-radius: 4px;
-    overflow: hidden;
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    aspect-ratio: 16/10; background: var(--surface); border: 1px solid var(--purple-border);
+    overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center;
+    transition: border-color 0.3s, box-shadow 0.3s;
   }
-
-  .frame-cell img,
-  .frame-cell canvas {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
+  .frame-cell::before, .frame-cell::after {
+    content: ''; position: absolute; width: 10px; height: 10px;
+    border-color: var(--cyan); border-style: solid; opacity: 0; transition: opacity 0.3s; z-index: 2; pointer-events: none;
   }
-
-  /* Placeholder skeleton while loading frames */
+  .frame-cell::before { top: 3px; left: 3px; border-width: 1px 0 0 1px; }
+  .frame-cell::after  { bottom: 3px; right: 3px; border-width: 0 1px 1px 0; }
+  .frame-cell:hover { border-color: var(--cyan); box-shadow: 0 0 20px rgba(0,245,255,0.15), inset 0 0 20px rgba(0,245,255,0.03); }
+  .frame-cell:hover::before, .frame-cell:hover::after { opacity: 0.7; }
+  .frame-cell .scan-line {
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(0,245,255,0.4), transparent);
+    animation: scan-down 3s ease-in-out infinite; z-index: 2; pointer-events: none; opacity: 0;
+  }
+  .frame-cell:hover .scan-line { opacity: 1; }
+  @keyframes scan-down { 0% { top: 0%; } 100% { top: 100%; } }
+  .frame-cell img, .frame-cell canvas { width: 100%; height: 100%; object-fit: cover; display: block; }
   .frame-cell .placeholder {
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, var(--surface) 25%, #151520 50%, var(--surface) 75%);
-    background-size: 200% 100%;
-    animation: shimmer-load 1.5s infinite;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, var(--surface) 25%, rgba(99,102,241,0.06) 50%, var(--surface) 75%);
+    background-size: 200% 100%; animation: shimmer-load 1.8s ease-in-out infinite; position: relative;
   }
-
-  @keyframes shimmer-load {
-    from { background-position: 200% 0; }
-    to   { background-position: -200% 0; }
+  .frame-cell .placeholder::before {
+    content: '+'; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    font-family: 'Space Mono', monospace; font-size: 1rem; color: var(--muted); opacity: 0.3;
   }
-
-  /* Row labels */
+  @keyframes shimmer-load { from { background-position: 200% 0; } to { background-position: -200% 0; } }
   .row-label {
-    font-family: 'Space Mono', monospace;
-    font-size: 0.6rem;
-    color: var(--muted);
-    letter-spacing: 0.1em;
-    margin-bottom: 14px;
-    text-transform: uppercase;
+    font-family: 'Space Mono', monospace; font-size: 0.58rem; color: var(--accent);
+    letter-spacing: 0.14em; margin-bottom: 10px; text-transform: uppercase;
+    display: flex; align-items: center; gap: 10px;
   }
+  .row-label::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(232,255,71,0.2), transparent); }
 
-  /* ── Error state ── */
-  .error-state {
-    display: none;
-    text-align: center;
-    padding: 60px 0;
+  /* Phase detection confidence indicator */
+  .detect-badge {
+    font-family: 'Space Mono', monospace; font-size: 0.48rem; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase; padding: 2px 6px;
+    border: 1px solid; margin-left: auto;
   }
+  .detect-badge.kinematic { color: var(--accent); border-color: rgba(232,255,71,0.3); background: rgba(232,255,71,0.07); }
+  .detect-badge.fallback  { color: var(--muted);  border-color: rgba(58,58,92,0.5);   background: transparent; }
+
+  .error-state { display: none; text-align: center; padding: 80px 0; }
   .error-state.visible { display: block; }
-  .error-state p {
-    font-family: 'Space Mono', monospace;
-    font-size: 0.78rem;
-    color: #ff7788;
-    margin-bottom: 20px;
-  }
+  .error-state p { font-family: 'Space Mono', monospace; font-size: 0.78rem; color: #ff5566; margin-bottom: 24px; text-shadow: 0 0 10px rgba(255,85,102,0.3); }
   .error-state a {
-    font-family: 'Syne', sans-serif;
-    font-size: 0.78rem;
-    color: var(--cyan);
-    text-decoration: none;
-    border: 1px solid var(--cyan);
-    padding: 10px 24px;
-    transition: background 0.2s, color 0.2s;
+    font-family: 'Space Mono', monospace; font-size: 0.7rem; color: var(--cyan);
+    text-decoration: none; border: 1px solid rgba(0,245,255,0.3); padding: 10px 28px;
+    letter-spacing: 0.1em; text-transform: uppercase; transition: all 0.3s;
   }
-  .error-state a:hover {
-    background: var(--cyan);
-    color: var(--bg);
+  .error-state a:hover { background: rgba(0,245,255,0.08); border-color: var(--cyan); box-shadow: 0 0 20px rgba(0,245,255,0.15); }
+  .status-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-top: 14px; margin-top: 8px; border-top: 1px solid var(--border);
+    font-family: 'Space Mono', monospace; font-size: 0.52rem; color: var(--muted);
+    letter-spacing: 0.08em; text-transform: uppercase;
   }
-
-  /* ── Back link ── */
-  .back-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-family: 'Space Mono', monospace;
-    font-size: 0.68rem;
-    color: var(--muted);
-    text-decoration: none;
-    margin-bottom: 28px;
-    letter-spacing: 0.06em;
-    transition: color 0.2s;
+  .status-bar .status-dot {
+    display: inline-block; width: 5px; height: 5px; background: var(--accent);
+    border-radius: 50%; margin-right: 6px; animation: blink-dot 2s ease-in-out infinite;
+    box-shadow: 0 0 6px rgba(232,255,71,0.5);
   }
-  .back-link:hover { color: var(--cyan); }
-
+  @keyframes blink-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
   @media (max-width: 700px) {
-    .phase-labels, .filmstrip {
-      grid-template-columns: repeat(3, 1fr);
-    }
+    .phase-labels, .filmstrip { grid-template-columns: repeat(3,1fr); }
+    .hud-panel { padding: 20px 14px 16px; }
   }
 </style>
 </head>
 <body>
 
+<canvas id="bg-canvas"></canvas>
+<div class="aurora"></div>
+
 <a class="logo" href="/">Stridelab</a>
 
 <div class="container">
-  <a class="back-link" href="/">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+  <a class="back-link" href="javascript:history.back()">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <polyline points="15 18 9 12 15 6"/>
     </svg>
-    Back
+    Back to results
   </a>
 
-  <!-- Loading -->
   <div class="loading" id="loading">
     <div class="loading-spinner"></div>
-    <div class="loading-text">Loading analysis…</div>
+    <div class="loading-text" id="loading-text">Extracting frames…</div>
   </div>
 
-  <!-- Error -->
   <div class="error-state" id="error-state">
     <p id="error-text">Could not load analysis data.</p>
     <a href="/">Upload another video</a>
   </div>
 
-  <!-- Kinogram -->
   <div class="kinogram" id="kinogram">
-    <div class="section-title">Running Kinogram</div>
+    <div class="hud-panel">
+      <div class="glow-line"></div>
+      <div class="hud-corners-bottom"></div>
 
-    <!-- Phase column headers -->
-    <div class="phase-labels">
-      <div class="phase-label">MVP</div>
-      <div class="phase-label">Strike</div>
-      <div class="phase-label">Touch Down</div>
-      <div class="phase-label">Full Support</div>
-      <div class="phase-label">Mid Swing</div>
-      <div class="phase-label">Toe Off</div>
-    </div>
+      <div class="section-title">
+        Running Kinogram
+        <span class="tag">Gait Phases</span>
+      </div>
+      <div class="section-subtitle">Biomechanical frame capture — 6 key phases per stride</div>
 
-    <!-- Row 1: Stride 1 -->
-    <div class="row-label" id="row1-label">Stride 1</div>
-    <div class="filmstrip" id="filmstrip-row1">
-      <div class="frame-cell"><div class="placeholder"></div></div>
-      <div class="frame-cell"><div class="placeholder"></div></div>
-      <div class="frame-cell"><div class="placeholder"></div></div>
-      <div class="frame-cell"><div class="placeholder"></div></div>
-      <div class="frame-cell"><div class="placeholder"></div></div>
-      <div class="frame-cell"><div class="placeholder"></div></div>
-    </div>
+      <div class="phase-labels" id="phase-labels-row1">
+        <div class="phase-label">MVP</div>
+        <div class="phase-label">Strike</div>
+        <div class="phase-label">Touch Down</div>
+        <div class="phase-label">Full Support</div>
+        <div class="phase-label">Mid Swing</div>
+        <div class="phase-label">Toe Off</div>
+      </div>
 
-    <!-- Row 2: Stride 2 -->
-    <div class="row-label" id="row2-label">Stride 2</div>
-    <div class="filmstrip" id="filmstrip-row2">
-      <div class="frame-cell"><div class="placeholder"></div></div>
-      <div class="frame-cell"><div class="placeholder"></div></div>
-      <div class="frame-cell"><div class="placeholder"></div></div>
-      <div class="frame-cell"><div class="placeholder"></div></div>
-      <div class="frame-cell"><div class="placeholder"></div></div>
-      <div class="frame-cell"><div class="placeholder"></div></div>
+      <div class="row-label" id="row1-label">
+        Stride 1
+        <span class="detect-badge fallback" id="row1-badge">OFFSET</span>
+      </div>
+      <div class="filmstrip" id="filmstrip-row1">
+        <div class="frame-cell"><div class="placeholder"></div><div class="scan-line"></div></div>
+        <div class="frame-cell"><div class="placeholder"></div><div class="scan-line"></div></div>
+        <div class="frame-cell"><div class="placeholder"></div><div class="scan-line"></div></div>
+        <div class="frame-cell"><div class="placeholder"></div><div class="scan-line"></div></div>
+        <div class="frame-cell"><div class="placeholder"></div><div class="scan-line"></div></div>
+        <div class="frame-cell"><div class="placeholder"></div><div class="scan-line"></div></div>
+      </div>
+
+      <div class="phase-labels" id="phase-labels-row2">
+        <div class="phase-label">MVP</div>
+        <div class="phase-label">Strike</div>
+        <div class="phase-label">Touch Down</div>
+        <div class="phase-label">Full Support</div>
+        <div class="phase-label">Mid Swing</div>
+        <div class="phase-label">Toe Off</div>
+      </div>
+
+      <div class="row-label" id="row2-label">
+        Stride 2
+        <span class="detect-badge fallback" id="row2-badge">OFFSET</span>
+      </div>
+      <div class="filmstrip" id="filmstrip-row2">
+        <div class="frame-cell"><div class="placeholder"></div><div class="scan-line"></div></div>
+        <div class="frame-cell"><div class="placeholder"></div><div class="scan-line"></div></div>
+        <div class="frame-cell"><div class="placeholder"></div><div class="scan-line"></div></div>
+        <div class="frame-cell"><div class="placeholder"></div><div class="scan-line"></div></div>
+        <div class="frame-cell"><div class="placeholder"></div><div class="scan-line"></div></div>
+        <div class="frame-cell"><div class="placeholder"></div><div class="scan-line"></div></div>
+      </div>
+
+      <div class="status-bar">
+        <span><span class="status-dot"></span>Analysis complete</span>
+        <span id="status-info">—</span>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- Hidden video for frame capture -->
-<video id="hidden-video" style="display:none;" crossorigin="anonymous" preload="auto"></video>
+<video id="hidden-video" style="display:none;" preload="auto"></video>
 
 <script>
   const params = new URLSearchParams(window.location.search);
@@ -296,14 +288,15 @@
 
   const PHASES = ["MVP", "Strike", "Touch Down", "Full Support", "Mid Swing", "Toe Off"];
 
-  // Approximate % positions within a gait cycle for each phase
-  const PHASE_OFFSETS = [0.0, 0.15, 0.25, 0.40, 0.65, 0.85];
+  // Fallback fixed offsets used when keypoint data is unavailable (old jobs).
+  const PHASE_OFFSETS_FALLBACK = [0.0, 0.15, 0.25, 0.40, 0.65, 0.85];
 
-  const loadingEl  = document.getElementById("loading");
-  const errorEl    = document.getElementById("error-state");
-  const errorText  = document.getElementById("error-text");
-  const kinogramEl = document.getElementById("kinogram");
-  const video      = document.getElementById("hidden-video");
+  const loadingEl   = document.getElementById("loading");
+  const loadingText = document.getElementById("loading-text");
+  const errorEl     = document.getElementById("error-state");
+  const errorText   = document.getElementById("error-text");
+  const kinogramEl  = document.getElementById("kinogram");
+  const video       = document.getElementById("hidden-video");
 
   function showError(msg) {
     loadingEl.classList.add("hidden");
@@ -311,235 +304,330 @@
     errorEl.classList.add("visible");
   }
 
-  // ── Clean & interpolate an angle time-series ──
+  // ── Smoothing helpers ──────────────────────────────────────────────────────
+
+  function movingAvg(arr, w = 4) {
+    return arr.map((_, i) => {
+      const vals = [];
+      for (let j = Math.max(0, i - w); j <= Math.min(arr.length - 1, i + w); j++) {
+        if (arr[j] !== null && arr[j] !== undefined) vals.push(arr[j]);
+      }
+      return vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+    });
+  }
+
+  // Central-difference velocity; positive = value increasing (foot descending in image coords)
+  function centralDiff(arr) {
+    return arr.map((v, i) => {
+      if (i === 0 || i === arr.length - 1 || v === null) return 0;
+      const prev = arr[i - 1] ?? arr[i];
+      const next = arr[i + 1] ?? arr[i];
+      return (next - prev) / 2;
+    });
+  }
+
+  // ── Local extrema ──────────────────────────────────────────────────────────
+
+  function localMaxima(arr) {
+    const peaks = [];
+    for (let i = 2; i < arr.length - 2; i++) {
+      if (arr[i] === null) continue;
+      if (arr[i] > (arr[i-1] ?? -Infinity) &&
+          arr[i] > (arr[i+1] ?? -Infinity) &&
+          arr[i] > (arr[i-2] ?? -Infinity) &&
+          arr[i] > (arr[i+2] ?? -Infinity)) {
+        peaks.push(i);
+      }
+    }
+    return peaks;
+  }
+
+  function localMinima(arr) {
+    const troughs = [];
+    for (let i = 2; i < arr.length - 2; i++) {
+      if (arr[i] === null) continue;
+      if (arr[i] < (arr[i-1] ?? Infinity) &&
+          arr[i] < (arr[i+1] ?? Infinity) &&
+          arr[i] < (arr[i-2] ?? Infinity) &&
+          arr[i] < (arr[i+2] ?? Infinity)) {
+        troughs.push(i);
+      }
+    }
+    return troughs;
+  }
+
+  // ── Ankle-velocity phase detection ────────────────────────────────────────
+  /**
+   * Returns { frames: [6 global frame indices], kinematic: bool }
+   *
+   * Algorithm (all indices are LOCAL to cycleFrames slice):
+   *
+   *  1. Extract ankle y-positions (image coords: higher y = lower = on ground).
+   *  2. Smooth with a moving average to suppress YOLO jitter.
+   *  3. Compute central-difference velocity (positive = foot descending).
+   *  4. Find ground contact: the HIGHEST local maximum in ankle-y is the moment
+   *     the foot is most firmly planted (deepest = Touch Down apex).
+   *  5. Scan outward from that apex via velocity to find contact boundaries:
+   *       – scan backward  until velocity > threshold  → Touch Down frame
+   *       – scan forward   until velocity < −threshold → Toe Off frame
+   *  6. Derive remaining phases:
+   *       Full Support = midpoint of contact period
+   *       Strike       = ~50 ms before Touch Down (foot descending)
+   *       Mid Swing    = first ankle local minimum after Toe Off (foot highest)
+   *       MVP          = last secondary-ankle minimum before Strike (contralateral apex)
+   *
+   * Falls back to PHASE_OFFSETS_FALLBACK if data is missing or too sparse.
+   */
+  function detectPhaseFrames(frames, cycle, fps) {
+    const { startFrame, endFrame, duration } = cycle;
+
+    const fallback = () => ({
+      frames: PHASE_OFFSETS_FALLBACK.map(off => startFrame + Math.round(off * duration)),
+      kinematic: false,
+    });
+
+    if (duration < 6) return fallback();
+
+    const cycleFrames = frames.slice(startFrame, Math.min(endFrame + 1, frames.length));
+    if (!cycleFrames[0]?.kpts) return fallback();
+
+    // 1. Extract ankle y-positions
+    const rAnkY = cycleFrames.map(f => f.kpts?.rankle?.[1] ?? null);
+    const lAnkY = cycleFrames.map(f => f.kpts?.lankle?.[1] ?? null);
+
+    const countValid = arr => arr.filter(v => v !== null).length;
+    const primaryY   = countValid(rAnkY) >= countValid(lAnkY) ? rAnkY : lAnkY;
+    const secondaryY = countValid(rAnkY) >= countValid(lAnkY) ? lAnkY : rAnkY;
+
+    if (countValid(primaryY) < 6) return fallback();
+
+    // 2. Smooth
+    const pS = movingAvg(primaryY,   4);
+    const sS = movingAvg(secondaryY, 4);
+
+    // 3. Velocity
+    const pV = centralDiff(pS);
+
+    // 4. Find ground-contact frame: highest ankle-y maximum
+    const pMaxima = localMaxima(pS);
+    if (pMaxima.length === 0) return fallback();
+
+    const tdApex = pMaxima.reduce(
+      (best, i) => (pS[i] > pS[best] ? i : best),
+      pMaxima[0]
+    );
+
+    // 5. Scan for contact boundaries
+    const halfWin  = Math.round(fps * 0.18); // max 180 ms either side
+    const VEL_THR  = 0.8;                    // px/frame threshold
+
+    let contactStart = tdApex;
+    for (let i = tdApex - 1; i >= Math.max(0, tdApex - halfWin); i--) {
+      if (pV[i] > VEL_THR) { contactStart = i + 1; break; }
+      contactStart = i;
+    }
+
+    let contactEnd = tdApex;
+    const fwdWin = halfWin + Math.round(fps * 0.06);
+    for (let i = tdApex + 1; i < Math.min(pS.length, tdApex + fwdWin); i++) {
+      if (pV[i] < -VEL_THR) { contactEnd = i - 1; break; }
+      contactEnd = i;
+    }
+
+    // 6. Derive all six phase local indices
+    const N     = cycleFrames.length - 1;
+    const clamp = v => Math.min(Math.max(0, Math.round(v)), N);
+
+    const touchDown   = clamp(contactStart);
+    const fullSupport = clamp((contactStart + contactEnd) / 2);
+    const toeOff      = clamp(Math.min(contactEnd + 2, N));
+    const strike      = clamp(contactStart - Math.round(fps * 0.05));
+
+    // Mid Swing: primary foot highest in air (min y) after toe-off
+    const pMinima = localMinima(pS);
+    const postToeMin = pMinima.filter(i => i > toeOff);
+    const midSwing = clamp(
+      postToeMin.length > 0
+        ? postToeMin[0]
+        : toeOff + Math.round(fps * 0.12)
+    );
+
+    // MVP: contralateral foot at apex (min y) before strike
+    const sMinima = localMinima(sS);
+    const preStrikeSec = sMinima.filter(i => i < contactStart);
+    const mvp = clamp(
+      preStrikeSec.length > 0
+        ? preStrikeSec[preStrikeSec.length - 1]
+        : Math.max(0, strike - Math.round(fps * 0.08))
+    );
+
+    console.log(
+      `[Phase detect] MVP=${mvp} Strike=${strike} TD=${touchDown} ` +
+      `FS=${fullSupport} MS=${midSwing} TO=${toeOff}  (local indices, cycle length=${N})`
+    );
+
+    return {
+      frames: [mvp, strike, touchDown, fullSupport, midSwing, toeOff]
+                .map(local => startFrame + clamp(local)),
+      kinematic: true,
+    };
+  }
+
+  // ── Gait cycle detection (unchanged from original) ─────────────────────────
+
   function cleanSeries(frames, angleKey) {
     const raw = frames.map(f => (f.angles && f.angles[angleKey]) ?? null);
-
-    // Interpolate nulls
     for (let i = 0; i < raw.length; i++) {
       if (raw[i] !== null) continue;
       let before = i - 1;
       while (before >= 0 && raw[before] === null) before--;
       let after = i + 1;
       while (after < raw.length && raw[after] === null) after++;
-      if (before >= 0 && after < raw.length) {
+      if (before >= 0 && after < raw.length)
         raw[i] = raw[before] + (raw[after] - raw[before]) * ((i - before) / (after - before));
-      } else if (before >= 0) {
-        raw[i] = raw[before];
-      } else if (after < raw.length) {
-        raw[i] = raw[after];
-      } else {
-        raw[i] = 0;
-      }
+      else if (before >= 0) raw[i] = raw[before];
+      else if (after < raw.length) raw[i] = raw[after];
+      else raw[i] = 0;
     }
-
-    // Heavy smoothing (window = 7) to kill noise
-    const out = [];
-    const w = 7;
+    const out = [], w = 7;
     for (let i = 0; i < raw.length; i++) {
       let sum = 0, n = 0;
-      for (let j = Math.max(0, i - w); j <= Math.min(raw.length - 1, i + w); j++) {
-        sum += raw[j]; n++;
-      }
+      for (let j = Math.max(0, i - w); j <= Math.min(raw.length - 1, i + w); j++) { sum += raw[j]; n++; }
       out.push(sum / n);
     }
     return out;
   }
 
-  // ── Find peaks with prominence filtering ──
   function findProminentPeaks(values, minDistFrames) {
-    // Step 1: find ALL local maxima
     const candidates = [];
     for (let i = 2; i < values.length - 2; i++) {
-      if (values[i] > values[i - 1] && values[i] > values[i + 1] &&
-          values[i] > values[i - 2] && values[i] > values[i + 2]) {
+      if (values[i] > values[i-1] && values[i] > values[i+1] &&
+          values[i] > values[i-2] && values[i] > values[i+2]) {
         candidates.push(i);
       }
     }
     if (candidates.length === 0) return [];
-
-    // Step 2: compute prominence for each candidate
-    const globalMin = Math.min(...values);
-    const globalMax = Math.max(...values);
+    const globalMin = Math.min(...values), globalMax = Math.max(...values);
     const range = globalMax - globalMin || 1;
-
     const withProm = candidates.map(idx => {
-      // Find the lowest valley on each side before hitting a higher peak
       let leftMin = values[idx], rightMin = values[idx];
-      for (let j = idx - 1; j >= 0; j--) {
-        leftMin = Math.min(leftMin, values[j]);
-        if (values[j] > values[idx]) break;
-      }
-      for (let j = idx + 1; j < values.length; j++) {
-        rightMin = Math.min(rightMin, values[j]);
-        if (values[j] > values[idx]) break;
-      }
-      const prominence = values[idx] - Math.max(leftMin, rightMin);
-      return { idx, prominence };
+      for (let j = idx - 1; j >= 0; j--) { leftMin = Math.min(leftMin, values[j]); if (values[j] > values[idx]) break; }
+      for (let j = idx + 1; j < values.length; j++) { rightMin = Math.min(rightMin, values[j]); if (values[j] > values[idx]) break; }
+      return { idx, prominence: values[idx] - Math.max(leftMin, rightMin) };
     });
-
-    // Step 3: keep only peaks with prominence > 15% of total range
     const minProm = range * 0.15;
-    const strong = withProm
-      .filter(p => p.prominence >= minProm)
-      .sort((a, b) => b.prominence - a.prominence);
-
-    // Step 4: enforce minimum distance (greedy, highest prominence first)
+    const strong  = withProm.filter(p => p.prominence >= minProm).sort((a, b) => b.prominence - a.prominence);
     const selected = [];
     for (const peak of strong) {
-      const tooClose = selected.some(s => Math.abs(s - peak.idx) < minDistFrames);
-      if (!tooClose) selected.push(peak.idx);
+      if (!selected.some(s => Math.abs(s - peak.idx) < minDistFrames)) selected.push(peak.idx);
     }
-
     return selected.sort((a, b) => a - b);
   }
 
-  // ── Detect gait cycles from hip angle data ──
   function detectGaitCycles(frames, angleKey, fps) {
     const smoothed = cleanSeries(frames, angleKey);
-
-    // Minimum distance between peaks: a full stride at max sprint is ~0.3s,
-    // so require at least 0.35s between peaks
-    const minDist = Math.max(8, Math.floor(fps * 0.35));
-    const peaks = findProminentPeaks(smoothed, minDist);
-
-    console.log(`[${angleKey}] Found ${peaks.length} prominent peaks:`, peaks);
-
-    // Build cycles (peak to peak)
-    const cycles = [];
+    const minDist  = Math.max(8, Math.floor(fps * 0.35));
+    const peaks    = findProminentPeaks(smoothed, minDist);
+    const cycles   = [];
     for (let i = 0; i < peaks.length - 1; i++) {
-      const startFrame = peaks[i];
-      const endFrame   = peaks[i + 1];
-      const duration   = endFrame - startFrame;
+      const startFrame = peaks[i], endFrame = peaks[i + 1], duration = endFrame - startFrame;
       const durationSec = duration / fps;
-      // Accept cycles between 0.25s and 2.0s
-      if (durationSec >= 0.25 && durationSec <= 2.0) {
-        cycles.push({ startFrame, endFrame, duration });
-        console.log(`  Cycle: frame ${startFrame}→${endFrame} (${durationSec.toFixed(2)}s)`);
-      }
+      if (durationSec >= 0.25 && durationSec <= 2.0) cycles.push({ startFrame, endFrame, duration });
     }
-
     return cycles;
   }
 
-  // ── Fallback: evenly spaced frames across the video ──
   function evenlySpacedCycles(totalFrames, fps) {
-    // Split the middle 70% of the video into two halves for the two rows
-    const start = Math.floor(totalFrames * 0.15);
-    const end   = Math.floor(totalFrames * 0.85);
+    const start = Math.floor(totalFrames * 0.15), end = Math.floor(totalFrames * 0.85);
     const mid   = Math.floor((start + end) / 2);
-    const dur1  = mid - start;
-    const dur2  = end - mid;
-
-    console.log("Fallback: using evenly spaced frames");
     return [
-      { startFrame: start, endFrame: mid, duration: dur1 },
-      { startFrame: mid,   endFrame: end, duration: dur2 },
+      { startFrame: start, endFrame: mid, duration: mid - start },
+      { startFrame: mid,   endFrame: end, duration: end - mid   },
     ];
   }
 
-  // ── Capture a single frame from the video at a given time ──
+  // ── Frame capture ─────────────────────────────────────────────────────────
+
   function captureFrame(videoEl, time) {
     return new Promise((resolve, reject) => {
-      // Clamp to valid range
-      const t = Math.max(0, Math.min(time, videoEl.duration - 0.05));
+      const t = Math.max(0.05, Math.min(time, videoEl.duration - 0.05));
       const timeout = setTimeout(() => {
         videoEl.removeEventListener("seeked", onSeeked);
-        reject(new Error("Seek timeout"));
-      }, 5000);
-
+        reject(new Error("Seek timeout at " + t.toFixed(3) + "s"));
+      }, 10000);
       const onSeeked = () => {
         clearTimeout(timeout);
         videoEl.removeEventListener("seeked", onSeeked);
-        // Small delay to ensure the frame is rendered
-        requestAnimationFrame(() => {
-          try {
-            const canvas = document.createElement("canvas");
-            canvas.width  = videoEl.videoWidth;
-            canvas.height = videoEl.videoHeight;
-            canvas.getContext("2d").drawImage(videoEl, 0, 0);
-            resolve(canvas.toDataURL("image/jpeg", 0.85));
-          } catch (e) {
-            reject(e);
-          }
-        });
+        setTimeout(() => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              try {
+                const canvas = document.createElement("canvas");
+                canvas.width  = videoEl.videoWidth;
+                canvas.height = videoEl.videoHeight;
+                canvas.getContext("2d").drawImage(videoEl, 0, 0);
+                resolve(canvas.toDataURL("image/jpeg", 0.85));
+              } catch (e) { reject(e); }
+            });
+          });
+        }, 150);
       };
-
       videoEl.addEventListener("seeked", onSeeked);
       videoEl.currentTime = t;
     });
   }
 
-  // ── Fill a filmstrip row with captured frames ──
-  async function fillRow(rowEl, cycle, fps) {
+  // ── Fill a filmstrip row ──────────────────────────────────────────────────
+  // phaseFrameIndices: array of 6 global frame indices, one per phase.
+
+  async function fillRow(rowEl, phaseFrameIndices, fps) {
     const cells = rowEl.querySelectorAll(".frame-cell");
-
-    for (let i = 0; i < PHASE_OFFSETS.length; i++) {
-      const frameIdx = cycle.startFrame + Math.round(PHASE_OFFSETS[i] * cycle.duration);
-      const time     = frameIdx / fps;
-
-      console.log(`  ${PHASES[i]}: frame ${frameIdx}, time ${time.toFixed(3)}s`);
-
+    for (let i = 0; i < phaseFrameIndices.length; i++) {
+      const time = phaseFrameIndices[i] / fps;
+      console.log(`  ${PHASES[i]}: frame ${phaseFrameIndices[i]}, time ${time.toFixed(3)}s`);
       try {
         const dataUrl = await captureFrame(video, time);
         const img     = document.createElement("img");
         img.src       = dataUrl;
         img.alt       = PHASES[i];
-        cells[i].innerHTML = "";
-        cells[i].appendChild(img);
+        const ph = cells[i].querySelector(".placeholder");
+        if (ph) ph.remove();
+        cells[i].insertBefore(img, cells[i].firstChild);
       } catch (e) {
         console.warn(`Failed to capture frame for ${PHASES[i]}:`, e);
       }
     }
   }
 
-  // ── Main ──
+  // ── Main ──────────────────────────────────────────────────────────────────
+
   async function init() {
-    if (!jobId) {
-      showError("No job ID provided.");
-      return;
-    }
+    if (!jobId) { showError("No job ID provided."); return; }
 
     let analysisOk = false;
-    let fps = 30;
-    let totalFrames = 0;
+    let fps = 30, totalFrames = 0, frames = [];
     let cycle1 = null, cycle2 = null;
 
-    // 1. Try to fetch analysis data for smart cycle detection
     try {
       const res = await fetch(`/analysis-data/${jobId}`);
       if (res.ok) {
         const analysis = await res.json();
-        fps = analysis.fps || 30;
-        const frames = analysis.frames || [];
+        fps    = analysis.fps || 30;
+        frames = analysis.frames || [];
         totalFrames = frames.length;
-
         if (frames.length > 0) {
           analysisOk = true;
-          console.log(`Analysis data: ${frames.length} frames at ${fps} fps`);
-
-          // Try R Hip first, then L Hip
           const rCycles = detectGaitCycles(frames, "R Hip", fps);
           const lCycles = detectGaitCycles(frames, "L Hip", fps);
-
-          console.log(`R Hip cycles: ${rCycles.length}, L Hip cycles: ${lCycles.length}`);
-
-          // Pick the best cycle from each (prefer middle of video for clearest stride)
-          if (rCycles.length > 0) {
-            cycle1 = rCycles[Math.floor(rCycles.length / 2)];
-          }
+          if (rCycles.length > 0) cycle1 = rCycles[Math.floor(rCycles.length / 2)];
           if (lCycles.length > 0) {
-            // Try to pick a left cycle that doesn't overlap too much with cycle1
             for (const lc of lCycles) {
               if (!cycle1 || Math.abs(lc.startFrame - cycle1.startFrame) > cycle1.duration * 0.3) {
-                cycle2 = lc;
-                break;
+                cycle2 = lc; break;
               }
             }
             if (!cycle2) cycle2 = lCycles[Math.floor(lCycles.length / 2)];
           }
-
-          // If only one side had cycles, use a second cycle from the same side
           if (cycle1 && !cycle2 && rCycles.length > 1) {
             const idx = Math.floor(rCycles.length / 2);
             cycle2 = rCycles[idx + 1] || rCycles[idx - 1] || rCycles[0];
@@ -548,7 +636,6 @@
           if (!cycle1 && cycle2 && lCycles.length > 1) {
             const idx = Math.floor(lCycles.length / 2);
             cycle1 = lCycles[idx + 1] || lCycles[idx - 1] || lCycles[0];
-            if (cycle1 === cycle2 && lCycles.length > 1) cycle1 = lCycles[0];
           }
         }
       }
@@ -556,44 +643,40 @@
       console.warn("Could not fetch analysis data:", e);
     }
 
-    // 2. Load the processed video
+    loadingText.textContent = "Downloading video…";
     try {
+      const dlResp = await fetch(`/download/${jobId}`);
+      if (!dlResp.ok) throw new Error("Download HTTP " + dlResp.status);
+      const videoBlob = await dlResp.blob();
+      const blobUrl   = URL.createObjectURL(videoBlob);
+      loadingText.textContent = "Extracting frames…";
       await new Promise((resolve, reject) => {
-        video.addEventListener("canplaythrough", resolve, { once: true });
-        video.addEventListener("error", () => reject(new Error("Failed to load video.")), { once: true });
-        video.src = `/download/${jobId}`;
+        video.addEventListener("loadeddata", resolve, { once: true });
+        video.addEventListener("error", () => reject(new Error("Failed to decode video.")), { once: true });
+        video.src  = blobUrl;
         video.load();
       });
     } catch (err) {
+      console.error("Video load error:", err);
       showError("Failed to load the processed video.");
       return;
     }
 
-    // Wait a moment for video to become seekable
-    await new Promise(r => setTimeout(r, 800));
-
+    await new Promise(r => setTimeout(r, 500));
     console.log(`Video loaded: ${video.duration.toFixed(2)}s, ${video.videoWidth}x${video.videoHeight}`);
 
-    // 3. Fallback to evenly spaced frames if cycle detection failed
     if (!cycle1 && !cycle2) {
       const vidFrames = Math.floor(video.duration * fps);
-      const fallback = evenlySpacedCycles(vidFrames, fps);
-      cycle1 = fallback[0];
-      cycle2 = fallback[1];
+      const fallback  = evenlySpacedCycles(vidFrames, fps);
+      cycle1 = fallback[0]; cycle2 = fallback[1];
     }
-
-    // If we still only have one, create a second from the other half
     if (cycle1 && !cycle2) {
       const vidFrames = Math.floor(video.duration * fps);
-      // Place second cycle after the first one
-      const start2 = Math.min(cycle1.endFrame + 2, vidFrames - 10);
-      const end2   = Math.min(start2 + cycle1.duration, vidFrames);
-      if (end2 - start2 > 4) {
-        cycle2 = { startFrame: start2, endFrame: end2, duration: end2 - start2 };
-      }
+      const start2    = Math.min(cycle1.endFrame + 2, vidFrames - 10);
+      const end2      = Math.min(start2 + cycle1.duration, vidFrames);
+      if (end2 - start2 > 4) cycle2 = { startFrame: start2, endFrame: end2, duration: end2 - start2 };
     }
 
-    // 4. Show kinogram and fill frames
     loadingEl.classList.add("hidden");
     kinogramEl.classList.add("visible");
 
@@ -601,21 +684,91 @@
     const row2El    = document.getElementById("filmstrip-row2");
     const row1Label = document.getElementById("row1-label");
     const row2Label = document.getElementById("row2-label");
+    const row1Badge = document.getElementById("row1-badge");
+    const row2Badge = document.getElementById("row2-badge");
 
     if (cycle1) {
-      row1Label.textContent = analysisOk ? "Stride 1 — Right" : "Stride 1";
-      console.log("Filling row 1:", cycle1);
-      await fillRow(row1El, cycle1, fps);
+      row1Label.childNodes[0].textContent = analysisOk ? "Stride 1 — Right " : "Stride 1 ";
+      const result1 = detectPhaseFrames(frames, cycle1, fps);
+      if (result1.kinematic) {
+        row1Badge.textContent = "KINEMATIC";
+        row1Badge.className   = "detect-badge kinematic";
+        // Highlight the phase label headers to signal they're computed, not estimated
+        document.querySelectorAll("#phase-labels-row1 .phase-label").forEach(el => el.classList.add("detected"));
+      }
+      console.log("Row 1 phase frames:", result1);
+      await fillRow(row1El, result1.frames, fps);
     }
 
     if (cycle2) {
-      row2Label.textContent = analysisOk ? "Stride 2 — Left" : "Stride 2";
-      console.log("Filling row 2:", cycle2);
-      await fillRow(row2El, cycle2, fps);
+      row2Label.childNodes[0].textContent = analysisOk ? "Stride 2 — Left " : "Stride 2 ";
+      const result2 = detectPhaseFrames(frames, cycle2, fps);
+      if (result2.kinematic) {
+        row2Badge.textContent = "KINEMATIC";
+        row2Badge.className   = "detect-badge kinematic";
+        document.querySelectorAll("#phase-labels-row2 .phase-label").forEach(el => el.classList.add("detected"));
+      }
+      console.log("Row 2 phase frames:", result2);
+      await fillRow(row2El, result2.frames, fps);
     }
+
+    const statusInfo = document.getElementById("status-info");
+    const dur = video.duration ? video.duration.toFixed(1) + "s" : "—";
+    const res = video.videoWidth ? `${video.videoWidth}x${video.videoHeight}` : "";
+    statusInfo.textContent = `${fps} fps  ·  ${dur}  ·  ${res}`;
   }
 
   init();
+</script>
+
+<script>
+(function() {
+  const canvas = document.getElementById('bg-canvas');
+  const ctx = canvas.getContext('2d');
+  let w, h, particles, gridPhase = 0;
+  function resize() { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
+  window.addEventListener('resize', resize); resize();
+  const PARTICLE_COUNT = 60;
+  particles = [];
+  for (let i = 0; i < PARTICLE_COUNT; i++) {
+    particles.push({
+      x: Math.random()*w, y: Math.random()*h,
+      vx: (Math.random()-0.5)*0.3, vy: (Math.random()-0.5)*0.3,
+      r: Math.random()*1.5+0.5, alpha: Math.random()*0.4+0.1,
+      color: Math.random()>0.5 ? '0,245,255' : '99,102,241',
+      pulse: Math.random()*Math.PI*2, pulseSpeed: Math.random()*0.02+0.005,
+    });
+  }
+  function draw() {
+    ctx.clearRect(0,0,w,h); gridPhase += 0.003;
+    const gridSize=40, gridAlphaBase=0.025; ctx.lineWidth=0.5;
+    for (let x=0; x<w; x+=gridSize) {
+      const wave=Math.sin(x*0.005+gridPhase)*0.015+gridAlphaBase;
+      ctx.strokeStyle=`rgba(0,245,255,${wave})`; ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke();
+    }
+    for (let y=0; y<h; y+=gridSize) {
+      const wave=Math.sin(y*0.005+gridPhase*1.3)*0.015+gridAlphaBase;
+      ctx.strokeStyle=`rgba(0,245,255,${wave})`; ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke();
+    }
+    for (const p of particles) {
+      p.x+=p.vx; p.y+=p.vy; p.pulse+=p.pulseSpeed;
+      if (p.x<-10) p.x=w+10; if (p.x>w+10) p.x=-10; if (p.y<-10) p.y=h+10; if (p.y>h+10) p.y=-10;
+      const pa=p.alpha*(0.6+0.4*Math.sin(p.pulse));
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r*4,0,Math.PI*2); ctx.fillStyle=`rgba(${p.color},${pa*0.15})`; ctx.fill();
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fillStyle=`rgba(${p.color},${pa})`; ctx.fill();
+    }
+    ctx.lineWidth=0.5;
+    for (let i=0; i<particles.length; i++) for (let j=i+1; j<particles.length; j++) {
+      const dx=particles[i].x-particles[j].x, dy=particles[i].y-particles[j].y, dist=Math.sqrt(dx*dx+dy*dy);
+      if (dist<120) {
+        ctx.strokeStyle=`rgba(0,245,255,${(1-dist/120)*0.08})`; ctx.beginPath();
+        ctx.moveTo(particles[i].x,particles[i].y); ctx.lineTo(particles[j].x,particles[j].y); ctx.stroke();
+      }
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
 </script>
 </body>
 </html>

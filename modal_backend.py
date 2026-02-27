@@ -1,25 +1,5 @@
 """
 Sprint Analyzer — Modal Backend
-================================
-Runs YOLO26x-pose on an A10G GPU via Modal (serverless cloud GPU).
-Exposes a FastAPI web server with:
-  POST /analyze   — upload video, returns job ID
-  GET  /status    — poll job status
-  GET  /download  — download processed video
-  hi
-
-Deploy:s
-    pip install modal
-    modal deploy modal_backend.py
-
-Local dev:
-    modal serve modal_backend.py
-
-Environment variables (set in Modal dashboard or via modal secret):
-    API_SECRET  — shared secret key; send as X-API-Key header from your frontend
-                  If not set, auth is skipped (handy for local dev).
-    ALLOWED_ORIGIN — your frontend URL e.g. https://your-app.vercel.app
-                     Defaults to * if not set.
 """
 
 import json
@@ -30,11 +10,8 @@ from pathlib import Path
 
 import modal
 
-# ─── Modal app & image ────────────────────────────────────────────────────────
-
 app = modal.App("sprint-analyzer")
 
-# GPU image — installs everything needed at build time
 gpu_image = (
     modal.Image.debian_slim(python_version="3.11")
     .apt_install("libgl1-mesa-glx", "libglib2.0-0", "ffmpeg")
@@ -44,17 +21,13 @@ gpu_image = (
         "fastapi",
         "python-multipart",
         "uvicorn",
-        "slowapi",          # rate limiting
+        "slowapi",
     )
     .pip_install("opencv-python-headless")
 )
 
-# Persistent volume to store uploaded + processed videos
 volume = modal.Volume.from_name("sprint-analyzer-videos", create_if_missing=True)
 VOLUME_PATH = Path("/videos")
-
-
-# ─── COCO-17 skeleton drawing ─────────────────────────────────────────────────
 
 SKELETON = [
     (0, 1), (0, 2), (1, 3), (2, 4),
@@ -90,6 +63,22 @@ ANGLE_DEFS = [
     (5,  11, 13, "L Hip"),
     (11, 13, 15, "L Knee"),
     (5,   7,  9, "L Elbow"),
+]
+
+# COCO-17 keypoint indices stored per-frame for ankle-velocity phase detection.
+#   In COCO-17 (confirmed by ANGLE_DEFS):
+#     11=L hip  12=R hip  13=L knee  14=R knee  15=L ankle  16=R ankle
+#
+#   The frontend uses ankle y-position (image coords: high y = low = ground)
+#   to detect contact frames (local maxima) and velocity zero-crossings
+#   (touch-down / toe-off), replacing the old fixed PHASE_OFFSETS approach.
+KPT_RECORD = [
+    (11, "lhip"),
+    (12, "rhip"),
+    (13, "lknee"),
+    (14, "rknee"),
+    (15, "lankle"),
+    (16, "rankle"),
 ]
 
 
@@ -224,8 +213,6 @@ def draw_title(frame, progress_pct):
                 (200,200,200), 1, cv2.LINE_AA)
 
 
-# ─── Core processing function (runs on GPU) ───────────────────────────────────
-
 @app.function(
     image=gpu_image,
     gpu="A10G",
@@ -235,26 +222,19 @@ def draw_title(frame, progress_pct):
     memory=4096,
 )
 def process_video(job_id: str):
-    """
-    Loads yolo26x-pose, runs tracking on the uploaded video,
-    writes annotated output to the volume.
-    """
     import cv2
     import numpy as np
     from ultralytics import YOLO
 
-    # Reload volume so we can see the directory the web function just created
     volume.reload()
 
-    job_dir     = VOLUME_PATH / job_id
-    job_dir.mkdir(parents=True, exist_ok=True)  # safe no-op if already exists
-
+    job_dir       = VOLUME_PATH / job_id
+    job_dir.mkdir(parents=True, exist_ok=True)
     input_path    = job_dir / "input.mp4"
     output_path   = job_dir / "output.mp4"
     status_path   = job_dir / "status.txt"
     analysis_path = job_dir / "analysis.json"
 
-    # Collect per-frame angle data for the analysis endpoint
     frame_data = []
 
     def write_status(msg: str):
@@ -262,7 +242,6 @@ def process_video(job_id: str):
         volume.commit()
 
     write_status("loading_model")
-
     model = YOLO("yolo26x-pose.pt")
 
     cap    = cv2.VideoCapture(str(input_path))
@@ -282,7 +261,7 @@ def process_video(job_id: str):
     smoother    = EMA(alpha=0.15)
     last_angles = {}
     frame_idx   = 0
-    #hi
+
     write_status("processing:0")
 
     results = model.track(
@@ -339,12 +318,26 @@ def process_video(job_id: str):
 
             last_angles = smoother.update(raw)
 
-            # Record this frame's smoothed angles for the analysis JSON
+            # Record ankle/knee/hip positions for frontend phase detection.
+            # ankle y in image coords: high y = low on screen = near ground.
+            # Local maxima in ankle-y → ground contact frames (Touch Down).
+            # Velocity zero-crossings → Toe Off boundaries.
+            kpt_record = {}
+            for kpt_idx, kpt_name in KPT_RECORD:
+                if best_confs[kpt_idx] >= 0.2:
+                    kpt_record[kpt_name] = [
+                        round(float(best_kpts[kpt_idx][0]), 1),
+                        round(float(best_kpts[kpt_idx][1]), 1),
+                    ]
+                else:
+                    kpt_record[kpt_name] = None
+
             frame_data.append({
                 "frame": frame_idx,
                 "time":  round(frame_idx / fps, 3),
                 "angles": {k: round(v, 1) if v is not None else None
                            for k, v in last_angles.items()},
+                "kpts": kpt_record,
             })
 
         draw_hud(frame, last_angles)
@@ -359,29 +352,16 @@ def process_video(job_id: str):
     cap2.release()
     writer.release()
 
-    # Re-encode to H.264 so the video is playable in browsers.
-    # mp4v (the OpenCV default) is not supported by most web browsers;
-    # H.264 is the universal baseline codec for HTML5 <video>.
     import subprocess
     web_path = job_dir / "output_web.mp4"
     subprocess.run(
-        [
-            "ffmpeg", "-y",
-            "-i", str(output_path),
-            "-vcodec", "libx264",
-            "-crf", "23",
-            "-preset", "fast",
-            "-pix_fmt", "yuv420p",      # required for broad browser support
-            "-movflags", "+faststart",  # moov atom at front for streaming/seek
-            str(web_path),
-        ],
-        check=True,
-        capture_output=True,
+        ["ffmpeg", "-y", "-i", str(output_path),
+         "-vcodec", "libx264", "-crf", "23", "-preset", "fast",
+         "-pix_fmt", "yuv420p", "-movflags", "+faststart", str(web_path)],
+        check=True, capture_output=True,
     )
-    # Replace the raw mp4v output with the web-compatible H.264 version
     web_path.replace(output_path)
 
-    # ── Build and save analysis JSON ──────────────────────────────────────────
     angle_names = ["R Hip", "L Hip", "R Knee", "L Knee", "R Elbow", "L Elbow", "Trunk"]
     summary = {}
     for name in angle_names:
@@ -410,12 +390,9 @@ def process_video(job_id: str):
         "frames":       frame_data,
     }
     analysis_path.write_text(json.dumps(analysis))
-
     volume.commit()
     write_status("done")
 
-
-# ─── FastAPI web server ───────────────────────────────────────────────────────
 
 @app.function(
     image=gpu_image,
@@ -436,14 +413,11 @@ def web():
     from slowapi.errors import RateLimitExceeded
     from slowapi.util import get_remote_address
 
-    # ── Rate limiter (5 uploads per IP per hour) ──────────────────────────────
     limiter = Limiter(key_func=get_remote_address, default_limits=["200/hour"])
-
     api = FastAPI(title="Sprint Analyzer API")
     api.state.limiter = limiter
     api.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-    # ── CORS — tighten ALLOWED_ORIGIN in production ───────────────────────────
     allowed_origin = os.environ.get("ALLOWED_ORIGIN", "*")
     api.add_middleware(
         CORSMiddleware,
@@ -452,43 +426,27 @@ def web():
         allow_headers=["*"],
     )
 
-    # ── Optional API key check ────────────────────────────────────────────────
-    API_SECRET = os.environ.get("API_SECRET")  # set in Modal dashboard
+    API_SECRET = os.environ.get("API_SECRET")
 
     def check_api_key(request: Request):
-        """Raises 403 if API_SECRET is configured and the header doesn't match.
-        Used for internal Vercel-to-Modal routes (status, download) where the
-        secret is never exposed to the browser.
-        """
         if API_SECRET:
             key = request.headers.get("X-API-Key", "")
             if key != API_SECRET:
                 raise HTTPException(status_code=403, detail="Invalid or missing API key.")
 
     def check_upload_token(request: Request):
-        """Verifies a short-lived HMAC-SHA256 upload token minted by the Vercel
-        /upload-token endpoint.  Token format: "<expires_unix>.<hex_hmac>"
-
-        This lets the browser upload directly to Modal (no Vercel 4.5 MB limit)
-        without ever seeing the real API_SECRET.
-        """
         if not API_SECRET:
-            return  # auth disabled in local dev
-
+            return
         token = request.headers.get("X-Upload-Token", "")
         try:
             payload, sig = token.rsplit(".", 1)
         except ValueError:
             raise HTTPException(status_code=403, detail="Invalid upload token.")
-
-        # 1. Verify HMAC
         expected = hmac.new(
             API_SECRET.encode(), payload.encode(), hashlib.sha256
         ).hexdigest()
         if not hmac.compare_digest(expected, sig):
             raise HTTPException(status_code=403, detail="Invalid upload token.")
-
-        # 2. Verify expiry
         try:
             expires = int(payload)
         except ValueError:
@@ -496,30 +454,22 @@ def web():
         if time.time() > expires:
             raise HTTPException(status_code=403, detail="Upload token expired.")
 
-    # ── Routes ────────────────────────────────────────────────────────────────
-
     @api.post("/analyze")
     @limiter.limit("5/hour")
     async def analyze(request: Request, file: UploadFile = File(...)):
         check_upload_token(request)
-
         if not file.filename.lower().endswith((".mp4", ".mov", ".avi", ".mkv")):
             raise HTTPException(400, "Please upload an MP4, MOV, AVI or MKV file.")
-
         contents = await file.read()
         if len(contents) > 500 * 1024 * 1024:
             raise HTTPException(400, "File too large. Max 500 MB.")
-
         job_id  = str(uuid.uuid4())
         job_dir = VOLUME_PATH / job_id
         job_dir.mkdir(parents=True, exist_ok=True)
-
         (job_dir / "input.mp4").write_bytes(contents)
         (job_dir / "status.txt").write_text("queued")
         volume.commit()
-
         process_video.spawn(job_id)
-
         return JSONResponse({"job_id": job_id})
 
     @api.get("/status/{job_id}")
@@ -530,7 +480,6 @@ def web():
         if not status_file.exists():
             raise HTTPException(404, "Job not found.")
         raw = status_file.read_text().strip()
-
         if raw == "done":
             return {"status": "done", "progress": 100}
         elif raw.startswith("processing:"):
