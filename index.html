@@ -772,7 +772,7 @@
       progressStage.textContent = stages[data.status] || data.status;
 
       if (data.status === "processing" || data.status === "done") {
-        // Switch from warmup to progress % display
+        // Switch from warmup to progress % diplay
         if (wasWarmingUp) {
           wasWarmingUp = false;
           enterProcessingMode();
