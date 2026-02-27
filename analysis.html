@@ -10,11 +10,26 @@
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
+<<<<<<< HEAD
     --bg: #030308; --surface: #0a0a14; --border: #1a1a2e; --text: #e8e8f0;
     --muted: #3a3a5c; --accent: #e8ff47; --cyan: #00f5ff; --purple: #6366f1;
     --purple-border: rgba(99,102,241,0.45);
+=======
+    --bg:      #030308;
+    --surface: #0a0a14;
+    --border:  #1a1a2e;
+    --text:    #e8e8f0;
+    --muted:   #3a3a5c;
+    --accent:  #e8ff47;
+    --cyan:    #00f5ff;
+    --purple:  #6366f1;
+    --purple-border: rgba(99, 102, 241, 0.45);
+    --glow-cyan: rgba(0, 245, 255, 0.15);
+    --glow-purple: rgba(99, 102, 241, 0.2);
+>>>>>>> 8b579133d1b85f92bf1d6fb4ca860757b77c124f
   }
   body {
+<<<<<<< HEAD
     background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif;
     font-weight: 300; min-height: 100vh; display: flex; flex-direction: column;
     align-items: center; padding: 32px 24px; position: relative; overflow: hidden;
@@ -22,11 +37,47 @@
   #bg-canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
   .aurora {
     position: fixed; top: -30%; left: -20%; width: 140%; height: 70%;
+=======
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Animated background canvas */
+  #bg-canvas {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* Animated aurora glow */
+  .aurora {
+    position: fixed;
+    top: -30%;
+    left: -20%;
+    width: 140%;
+    height: 70%;
+>>>>>>> 8b579133d1b85f92bf1d6fb4ca860757b77c124f
     background:
       radial-gradient(ellipse 50% 60% at 30% 50%, rgba(99,102,241,0.08) 0%, transparent 70%),
       radial-gradient(ellipse 50% 60% at 70% 50%, rgba(0,245,255,0.06) 0%, transparent 70%);
     animation: aurora-drift 12s ease-in-out infinite alternate;
+<<<<<<< HEAD
     pointer-events: none; z-index: 0; filter: blur(40px);
+=======
+    pointer-events: none;
+    z-index: 0;
+    filter: blur(40px);
+>>>>>>> 8b579133d1b85f92bf1d6fb4ca860757b77c124f
   }
   @keyframes aurora-drift {
     0%   { transform: translateX(-5%) translateY(0%) rotate(-2deg); opacity: 0.6; }
@@ -34,6 +85,7 @@
     66%  { transform: translateX(-2%) translateY(-2%) rotate(-1deg); opacity: 0.7; }
     100% { transform: translateX(5%) translateY(1%) rotate(2deg); opacity: 0.9; }
   }
+<<<<<<< HEAD
   body::after {
     content: ''; position: fixed; inset: 0;
     background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,245,255,0.008) 2px, rgba(0,245,255,0.008) 4px);
@@ -54,25 +106,104 @@
     font-family: 'Space Mono', monospace; font-size: 0.62rem; color: var(--muted);
     text-decoration: none; margin-bottom: 24px; letter-spacing: 0.08em;
     text-transform: uppercase; transition: color 0.2s, text-shadow 0.2s;
+=======
+
+  /* Subtle scan line overlay */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 245, 255, 0.008) 2px,
+      rgba(0, 245, 255, 0.008) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* Ensure content sits above background */
+  .logo, .container { position: relative; z-index: 1; }
+
+  .logo {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 400;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    margin-bottom: 36px;
+    text-decoration: none;
+    text-shadow: 0 0 12px rgba(0, 245, 255, 0.5);
+    transition: text-shadow 0.3s;
+  }
+  .logo:hover { text-shadow: 0 0 20px rgba(0, 245, 255, 0.8); }
+
+  .container {
+    width: 100%;
+    max-width: 1100px;
+    animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Loading state ── */
+  .loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    padding: 100px 0;
+>>>>>>> 8b579133d1b85f92bf1d6fb4ca860757b77c124f
   }
   .back-link:hover { color: var(--cyan); text-shadow: 0 0 8px rgba(0,245,255,0.4); }
   .loading { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; padding: 100px 0; }
   .loading.hidden { display: none; }
   .loading-spinner {
+<<<<<<< HEAD
     width: 48px; height: 48px; border: 2px solid transparent;
     border-top-color: var(--cyan); border-right-color: rgba(99,102,241,0.5);
     border-radius: 50%; animation: spin 0.7s linear infinite;
+=======
+    width: 48px; height: 48px;
+    border: 2px solid transparent;
+    border-top-color: var(--cyan);
+    border-right-color: rgba(99,102,241,0.5);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+>>>>>>> 8b579133d1b85f92bf1d6fb4ca860757b77c124f
     filter: drop-shadow(0 0 8px rgba(0,245,255,0.4));
   }
   @keyframes spin { to { transform: rotate(360deg); } }
   .loading-text {
+<<<<<<< HEAD
     font-family: 'Space Mono', monospace; font-size: 0.72rem; color: var(--cyan);
     letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.7;
     animation: pulse-text 2s ease-in-out infinite;
+=======
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--cyan);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    opacity: 0.7;
+    animation: pulse-text 2s ease-in-out infinite;
+  }
+  @keyframes pulse-text {
+    0%, 100% { opacity: 0.5; }
+    50%      { opacity: 1; }
+>>>>>>> 8b579133d1b85f92bf1d6fb4ca860757b77c124f
   }
   @keyframes pulse-text { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
   .kinogram { display: none; }
   .kinogram.visible { display: block; }
+<<<<<<< HEAD
   .hud-panel {
     background: linear-gradient(180deg, rgba(10,10,20,0.95) 0%, rgba(6,6,14,0.98) 100%);
     border: 1px solid var(--border); padding: 28px 24px 24px; position: relative; margin-bottom: 0;
@@ -104,6 +235,98 @@
     font-family: 'Space Mono', monospace; font-size: 0.55rem; font-weight: 400;
     color: var(--muted); background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.25);
     padding: 3px 8px; letter-spacing: 0.1em; text-shadow: none;
+=======
+
+  /* HUD panel wrapper */
+  .hud-panel {
+    background: linear-gradient(180deg, rgba(10,10,20,0.95) 0%, rgba(6,6,14,0.98) 100%);
+    border: 1px solid var(--border);
+    padding: 28px 24px 24px;
+    position: relative;
+    margin-bottom: 0;
+  }
+
+  /* Corner brackets */
+  .hud-panel::before, .hud-panel::after {
+    content: '';
+    position: absolute;
+    width: 20px; height: 20px;
+    border-color: var(--cyan);
+    border-style: solid;
+    opacity: 0.6;
+  }
+  .hud-panel::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+  .hud-panel::after  { top: -1px; right: -1px; border-width: 2px 2px 0 0; }
+  .hud-panel-bottom::before { bottom: -1px; left: -1px; border-width: 0 0 2px 2px; top: auto; }
+  .hud-panel-bottom::after  { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; top: auto; }
+
+  /* Extra bottom corners via inner div */
+  .hud-corners-bottom {
+    position: absolute;
+    bottom: 0; left: 0; right: 0; height: 0;
+    pointer-events: none;
+  }
+  .hud-corners-bottom::before, .hud-corners-bottom::after {
+    content: '';
+    position: absolute;
+    width: 20px; height: 20px;
+    border-color: var(--cyan);
+    border-style: solid;
+    opacity: 0.6;
+  }
+  .hud-corners-bottom::before { bottom: 0; left: -1px; border-width: 0 0 2px 2px; }
+  .hud-corners-bottom::after  { bottom: 0; right: -1px; border-width: 0 2px 2px 0; }
+
+  /* Glow line at top of panel */
+  .hud-panel .glow-line {
+    position: absolute;
+    top: 0; left: 20px; right: 20px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+    opacity: 0.3;
+  }
+
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    margin-bottom: 6px;
+    text-shadow: 0 0 20px rgba(0, 245, 255, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title .tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.55rem;
+    font-weight: 400;
+    color: var(--muted);
+    background: rgba(99,102,241,0.1);
+    border: 1px solid rgba(99,102,241,0.25);
+    padding: 3px 8px;
+    letter-spacing: 0.1em;
+    text-shadow: none;
+  }
+
+  .section-subtitle {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    margin-bottom: 22px;
+    text-transform: uppercase;
+  }
+
+  /* Phase labels row */
+  .phase-labels {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+    margin-bottom: 10px;
+>>>>>>> 8b579133d1b85f92bf1d6fb4ca860757b77c124f
   }
   .section-subtitle {
     font-family: 'Space Mono', monospace; font-size: 0.6rem; color: var(--muted);
@@ -111,6 +334,7 @@
   }
   .phase-labels { display: grid; grid-template-columns: repeat(6,1fr); gap: 8px; margin-bottom: 10px; }
   .phase-label {
+<<<<<<< HEAD
     font-family: 'Space Mono', monospace; font-size: 0.58rem; font-weight: 700;
     letter-spacing: 0.14em; text-transform: uppercase; text-align: center;
     color: var(--cyan); opacity: 0.7; padding-bottom: 6px; border-bottom: 1px solid rgba(0,245,255,0.1);
@@ -122,6 +346,77 @@
     aspect-ratio: 16/10; background: var(--surface); border: 1px solid var(--purple-border);
     overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center;
     transition: border-color 0.3s, box-shadow 0.3s;
+=======
+    font-family: 'Space Mono', monospace;
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    text-align: center;
+    color: var(--cyan);
+    opacity: 0.7;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(0, 245, 255, 0.1);
+  }
+
+  /* Filmstrip grid */
+  .filmstrip {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .frame-cell {
+    aspect-ratio: 16 / 10;
+    background: var(--surface);
+    border: 1px solid var(--purple-border);
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+
+  /* HUD corner brackets on each frame */
+  .frame-cell::before, .frame-cell::after {
+    content: '';
+    position: absolute;
+    width: 10px; height: 10px;
+    border-color: var(--cyan);
+    border-style: solid;
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 2;
+    pointer-events: none;
+  }
+  .frame-cell::before { top: 3px; left: 3px; border-width: 1px 0 0 1px; }
+  .frame-cell::after  { bottom: 3px; right: 3px; border-width: 0 1px 1px 0; }
+
+  .frame-cell:hover {
+    border-color: var(--cyan);
+    box-shadow: 0 0 20px rgba(0, 245, 255, 0.15), inset 0 0 20px rgba(0, 245, 255, 0.03);
+  }
+  .frame-cell:hover::before, .frame-cell:hover::after { opacity: 0.7; }
+
+  /* Scan line on each frame */
+  .frame-cell .scan-line {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(0, 245, 255, 0.4), transparent);
+    animation: scan-down 3s ease-in-out infinite;
+    z-index: 2;
+    pointer-events: none;
+    opacity: 0;
+  }
+  .frame-cell:hover .scan-line { opacity: 1; }
+
+  @keyframes scan-down {
+    0%   { top: 0%; }
+    100% { top: 100%; }
+>>>>>>> 8b579133d1b85f92bf1d6fb4ca860757b77c124f
   }
   .frame-cell::before, .frame-cell::after {
     content: ''; position: absolute; width: 10px; height: 10px;
@@ -140,9 +435,30 @@
   @keyframes scan-down { 0% { top: 0%; } 100% { top: 100%; } }
   .frame-cell img, .frame-cell canvas { width: 100%; height: 100%; object-fit: cover; display: block; }
   .frame-cell .placeholder {
+<<<<<<< HEAD
     width: 100%; height: 100%;
     background: linear-gradient(90deg, var(--surface) 25%, rgba(99,102,241,0.06) 50%, var(--surface) 75%);
     background-size: 200% 100%; animation: shimmer-load 1.8s ease-in-out infinite; position: relative;
+=======
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, var(--surface) 25%, rgba(99,102,241,0.06) 50%, var(--surface) 75%);
+    background-size: 200% 100%;
+    animation: shimmer-load 1.8s ease-in-out infinite;
+    position: relative;
+  }
+
+  /* Crosshair in placeholder */
+  .frame-cell .placeholder::before {
+    content: '+';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Space Mono', monospace;
+    font-size: 1rem;
+    color: var(--muted);
+    opacity: 0.3;
+>>>>>>> 8b579133d1b85f92bf1d6fb4ca860757b77c124f
   }
   .frame-cell .placeholder::before {
     content: '+'; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
@@ -150,23 +466,50 @@
   }
   @keyframes shimmer-load { from { background-position: 200% 0; } to { background-position: -200% 0; } }
   .row-label {
+<<<<<<< HEAD
     font-family: 'Space Mono', monospace; font-size: 0.58rem; color: var(--accent);
     letter-spacing: 0.14em; margin-bottom: 10px; text-transform: uppercase;
     display: flex; align-items: center; gap: 10px;
+=======
+    font-family: 'Space Mono', monospace;
+    font-size: 0.58rem;
+    color: var(--accent);
+    letter-spacing: 0.14em;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .row-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(232, 255, 71, 0.2), transparent);
+>>>>>>> 8b579133d1b85f92bf1d6fb4ca860757b77c124f
   }
   .row-label::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(232,255,71,0.2), transparent); }
 
+<<<<<<< HEAD
   /* Phase detection confidence indicator */
   .detect-badge {
     font-family: 'Space Mono', monospace; font-size: 0.48rem; font-weight: 700;
     letter-spacing: 0.1em; text-transform: uppercase; padding: 2px 6px;
     border: 1px solid; margin-left: auto;
+=======
+  /* ── Error state ── */
+  .error-state {
+    display: none;
+    text-align: center;
+    padding: 80px 0;
+>>>>>>> 8b579133d1b85f92bf1d6fb4ca860757b77c124f
   }
   .detect-badge.kinematic { color: var(--accent); border-color: rgba(232,255,71,0.3); background: rgba(232,255,71,0.07); }
   .detect-badge.fallback  { color: var(--muted);  border-color: rgba(58,58,92,0.5);   background: transparent; }
 
   .error-state { display: none; text-align: center; padding: 80px 0; }
   .error-state.visible { display: block; }
+<<<<<<< HEAD
   .error-state p { font-family: 'Space Mono', monospace; font-size: 0.78rem; color: #ff5566; margin-bottom: 24px; text-shadow: 0 0 10px rgba(255,85,102,0.3); }
   .error-state a {
     font-family: 'Space Mono', monospace; font-size: 0.7rem; color: var(--cyan);
@@ -188,6 +531,83 @@
   @keyframes blink-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
   @media (max-width: 700px) {
     .phase-labels, .filmstrip { grid-template-columns: repeat(3,1fr); }
+=======
+  .error-state p {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.78rem;
+    color: #ff5566;
+    margin-bottom: 24px;
+    text-shadow: 0 0 10px rgba(255, 85, 102, 0.3);
+  }
+  .error-state a {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--cyan);
+    text-decoration: none;
+    border: 1px solid rgba(0, 245, 255, 0.3);
+    padding: 10px 28px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    transition: all 0.3s;
+  }
+  .error-state a:hover {
+    background: rgba(0, 245, 255, 0.08);
+    border-color: var(--cyan);
+    box-shadow: 0 0 20px rgba(0, 245, 255, 0.15);
+  }
+
+  /* ── Back link ── */
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.62rem;
+    color: var(--muted);
+    text-decoration: none;
+    margin-bottom: 24px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transition: color 0.2s, text-shadow 0.2s;
+  }
+  .back-link:hover {
+    color: var(--cyan);
+    text-shadow: 0 0 8px rgba(0, 245, 255, 0.4);
+  }
+
+  /* ── Status bar at bottom ── */
+  .status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 14px;
+    margin-top: 8px;
+    border-top: 1px solid var(--border);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.52rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .status-bar .status-dot {
+    display: inline-block;
+    width: 5px; height: 5px;
+    background: var(--accent);
+    border-radius: 50%;
+    margin-right: 6px;
+    animation: blink-dot 2s ease-in-out infinite;
+    box-shadow: 0 0 6px rgba(232, 255, 71, 0.5);
+  }
+  @keyframes blink-dot {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.3; }
+  }
+
+  @media (max-width: 700px) {
+    .phase-labels, .filmstrip {
+      grid-template-columns: repeat(3, 1fr);
+    }
+>>>>>>> 8b579133d1b85f92bf1d6fb4ca860757b77c124f
     .hud-panel { padding: 20px 14px 16px; }
   }
 </style>
@@ -209,7 +629,11 @@
 
   <div class="loading" id="loading">
     <div class="loading-spinner"></div>
+<<<<<<< HEAD
     <div class="loading-text" id="loading-text">Extracting frames…</div>
+=======
+    <div class="loading-text">Extracting frames…</div>
+>>>>>>> 8b579133d1b85f92bf1d6fb4ca860757b77c124f
   </div>
 
   <div class="error-state" id="error-state">
@@ -228,7 +652,12 @@
       </div>
       <div class="section-subtitle">Biomechanical frame capture — 6 key phases per stride</div>
 
+<<<<<<< HEAD
       <div class="phase-labels" id="phase-labels-row1">
+=======
+      <!-- Phase column headers -->
+      <div class="phase-labels">
+>>>>>>> 8b579133d1b85f92bf1d6fb4ca860757b77c124f
         <div class="phase-label">MVP</div>
         <div class="phase-label">Strike</div>
         <div class="phase-label">Touch Down</div>
@@ -237,10 +666,15 @@
         <div class="phase-label">Toe Off</div>
       </div>
 
+<<<<<<< HEAD
       <div class="row-label" id="row1-label">
         Stride 1
         <span class="detect-badge fallback" id="row1-badge">OFFSET</span>
       </div>
+=======
+      <!-- Row 1: Stride 1 -->
+      <div class="row-label" id="row1-label">Stride 1</div>
+>>>>>>> 8b579133d1b85f92bf1d6fb4ca860757b77c124f
       <div class="filmstrip" id="filmstrip-row1">
         <div class="frame-cell"><div class="placeholder"></div><div class="scan-line"></div></div>
         <div class="frame-cell"><div class="placeholder"></div><div class="scan-line"></div></div>
@@ -250,6 +684,7 @@
         <div class="frame-cell"><div class="placeholder"></div><div class="scan-line"></div></div>
       </div>
 
+<<<<<<< HEAD
       <div class="phase-labels" id="phase-labels-row2">
         <div class="phase-label">MVP</div>
         <div class="phase-label">Strike</div>
@@ -263,6 +698,10 @@
         Stride 2
         <span class="detect-badge fallback" id="row2-badge">OFFSET</span>
       </div>
+=======
+      <!-- Row 2: Stride 2 -->
+      <div class="row-label" id="row2-label">Stride 2</div>
+>>>>>>> 8b579133d1b85f92bf1d6fb4ca860757b77c124f
       <div class="filmstrip" id="filmstrip-row2">
         <div class="frame-cell"><div class="placeholder"></div><div class="scan-line"></div></div>
         <div class="frame-cell"><div class="placeholder"></div><div class="scan-line"></div></div>
@@ -272,6 +711,10 @@
         <div class="frame-cell"><div class="placeholder"></div><div class="scan-line"></div></div>
       </div>
 
+<<<<<<< HEAD
+=======
+      <!-- Status bar -->
+>>>>>>> 8b579133d1b85f92bf1d6fb4ca860757b77c124f
       <div class="status-bar">
         <span><span class="status-dot"></span>Analysis complete</span>
         <span id="status-info">—</span>
@@ -280,6 +723,10 @@
   </div>
 </div>
 
+<<<<<<< HEAD
+=======
+<!-- Hidden video for frame capture (no crossorigin — same-origin proxy) -->
+>>>>>>> 8b579133d1b85f92bf1d6fb4ca860757b77c124f
 <video id="hidden-video" style="display:none;" preload="auto"></video>
 
 <script>
@@ -546,18 +993,36 @@
     ];
   }
 
+<<<<<<< HEAD
   // ── Frame capture ─────────────────────────────────────────────────────────
 
   function captureFrame(videoEl, time) {
     return new Promise((resolve, reject) => {
       const t = Math.max(0.05, Math.min(time, videoEl.duration - 0.05));
+=======
+  // ── Capture a single frame from the video at a given time ──
+  // Uses double-rAF + delay to ensure the decoded frame is painted.
+  function captureFrame(videoEl, time) {
+    return new Promise((resolve, reject) => {
+      const t = Math.max(0.05, Math.min(time, videoEl.duration - 0.05));
+
+>>>>>>> 8b579133d1b85f92bf1d6fb4ca860757b77c124f
       const timeout = setTimeout(() => {
         videoEl.removeEventListener("seeked", onSeeked);
         reject(new Error("Seek timeout at " + t.toFixed(3) + "s"));
       }, 10000);
+<<<<<<< HEAD
       const onSeeked = () => {
         clearTimeout(timeout);
         videoEl.removeEventListener("seeked", onSeeked);
+=======
+
+      const onSeeked = () => {
+        clearTimeout(timeout);
+        videoEl.removeEventListener("seeked", onSeeked);
+
+        // Wait 150ms for the decoder, then two rAF to ensure paint
+>>>>>>> 8b579133d1b85f92bf1d6fb4ca860757b77c124f
         setTimeout(() => {
           requestAnimationFrame(() => {
             requestAnimationFrame(() => {
@@ -566,8 +1031,16 @@
                 canvas.width  = videoEl.videoWidth;
                 canvas.height = videoEl.videoHeight;
                 canvas.getContext("2d").drawImage(videoEl, 0, 0);
+<<<<<<< HEAD
                 resolve(canvas.toDataURL("image/jpeg", 0.85));
               } catch (e) { reject(e); }
+=======
+                console.log(`  ✓ Captured: requested=${t.toFixed(3)}s actual=${videoEl.currentTime.toFixed(3)}s`);
+                resolve(canvas.toDataURL("image/jpeg", 0.85));
+              } catch (e) {
+                reject(e);
+              }
+>>>>>>> 8b579133d1b85f92bf1d6fb4ca860757b77c124f
             });
           });
         }, 150);
@@ -590,6 +1063,10 @@
         const img     = document.createElement("img");
         img.src       = dataUrl;
         img.alt       = PHASES[i];
+<<<<<<< HEAD
+=======
+        // Remove placeholder but keep scan-line
+>>>>>>> 8b579133d1b85f92bf1d6fb4ca860757b77c124f
         const ph = cells[i].querySelector(".placeholder");
         if (ph) ph.remove();
         cells[i].insertBefore(img, cells[i].firstChild);
@@ -643,6 +1120,7 @@
       console.warn("Could not fetch analysis data:", e);
     }
 
+<<<<<<< HEAD
     loadingText.textContent = "Downloading video…";
     try {
       const dlResp = await fetch(`/download/${jobId}`);
@@ -654,6 +1132,28 @@
         video.addEventListener("loadeddata", resolve, { once: true });
         video.addEventListener("error", () => reject(new Error("Failed to decode video.")), { once: true });
         video.src  = blobUrl;
+=======
+    // 2. Download the FULL video as a blob, then create an object URL.
+    //    This guarantees the entire file is in memory and fully seekable —
+    //    the streaming proxy doesn't support HTTP Range requests, so
+    //    a regular <video src="…"> can only decode from the start.
+    const loadingText = document.querySelector(".loading-text");
+    try {
+      loadingText.textContent = "Downloading video…";
+      const dlResp = await fetch(`/download/${jobId}`);
+      if (!dlResp.ok) throw new Error("Download HTTP " + dlResp.status);
+
+      // Read into blob
+      const videoBlob = await dlResp.blob();
+      const blobUrl   = URL.createObjectURL(videoBlob);
+
+      loadingText.textContent = "Extracting frames…";
+
+      await new Promise((resolve, reject) => {
+        video.addEventListener("loadeddata", resolve, { once: true });
+        video.addEventListener("error", () => reject(new Error("Failed to decode video.")), { once: true });
+        video.src = blobUrl;
+>>>>>>> 8b579133d1b85f92bf1d6fb4ca860757b77c124f
         video.load();
       });
     } catch (err) {
@@ -662,7 +1162,13 @@
       return;
     }
 
+<<<<<<< HEAD
     await new Promise(r => setTimeout(r, 500));
+=======
+    // Give the browser time to parse moov atom & build seek index
+    await new Promise(r => setTimeout(r, 500));
+
+>>>>>>> 8b579133d1b85f92bf1d6fb4ca860757b77c124f
     console.log(`Video loaded: ${video.duration.toFixed(2)}s, ${video.videoWidth}x${video.videoHeight}`);
 
     if (!cycle1 && !cycle2) {
@@ -712,6 +1218,10 @@
       await fillRow(row2El, result2.frames, fps);
     }
 
+<<<<<<< HEAD
+=======
+    // Update status bar
+>>>>>>> 8b579133d1b85f92bf1d6fb4ca860757b77c124f
     const statusInfo = document.getElementById("status-info");
     const dur = video.duration ? video.duration.toFixed(1) + "s" : "—";
     const res = video.videoWidth ? `${video.videoWidth}x${video.videoHeight}` : "";
@@ -721,17 +1231,33 @@
   init();
 </script>
 
+<<<<<<< HEAD
+=======
+<!-- Animated particle background -->
+>>>>>>> 8b579133d1b85f92bf1d6fb4ca860757b77c124f
 <script>
 (function() {
   const canvas = document.getElementById('bg-canvas');
   const ctx = canvas.getContext('2d');
   let w, h, particles, gridPhase = 0;
+<<<<<<< HEAD
   function resize() { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
   window.addEventListener('resize', resize); resize();
+=======
+
+  function resize() {
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+>>>>>>> 8b579133d1b85f92bf1d6fb4ca860757b77c124f
   const PARTICLE_COUNT = 60;
   particles = [];
   for (let i = 0; i < PARTICLE_COUNT; i++) {
     particles.push({
+<<<<<<< HEAD
       x: Math.random()*w, y: Math.random()*h,
       vx: (Math.random()-0.5)*0.3, vy: (Math.random()-0.5)*0.3,
       r: Math.random()*1.5+0.5, alpha: Math.random()*0.4+0.1,
@@ -767,6 +1293,86 @@
     }
     requestAnimationFrame(draw);
   }
+=======
+      x: Math.random() * w,
+      y: Math.random() * h,
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: (Math.random() - 0.5) * 0.3,
+      r: Math.random() * 1.5 + 0.5,
+      alpha: Math.random() * 0.4 + 0.1,
+      color: Math.random() > 0.5 ? '0,245,255' : '99,102,241',
+      pulse: Math.random() * Math.PI * 2,
+      pulseSpeed: Math.random() * 0.02 + 0.005,
+    });
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+    gridPhase += 0.003;
+
+    // Animated grid
+    const gridSize = 40;
+    const gridAlphaBase = 0.025;
+    ctx.lineWidth = 0.5;
+    for (let x = 0; x < w; x += gridSize) {
+      const wave = Math.sin(x * 0.005 + gridPhase) * 0.015 + gridAlphaBase;
+      ctx.strokeStyle = `rgba(0, 245, 255, ${wave})`;
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, h);
+      ctx.stroke();
+    }
+    for (let y = 0; y < h; y += gridSize) {
+      const wave = Math.sin(y * 0.005 + gridPhase * 1.3) * 0.015 + gridAlphaBase;
+      ctx.strokeStyle = `rgba(0, 245, 255, ${wave})`;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(w, y);
+      ctx.stroke();
+    }
+
+    // Particles
+    for (const p of particles) {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.pulse += p.pulseSpeed;
+      if (p.x < -10) p.x = w + 10;
+      if (p.x > w + 10) p.x = -10;
+      if (p.y < -10) p.y = h + 10;
+      if (p.y > h + 10) p.y = -10;
+
+      const pulseAlpha = p.alpha * (0.6 + 0.4 * Math.sin(p.pulse));
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r * 4, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${p.color}, ${pulseAlpha * 0.15})`;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${p.color}, ${pulseAlpha})`;
+      ctx.fill();
+    }
+
+    // Connections
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 120) {
+          ctx.strokeStyle = `rgba(0, 245, 255, ${(1 - dist / 120) * 0.08})`;
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    requestAnimationFrame(draw);
+  }
+
+>>>>>>> 8b579133d1b85f92bf1d6fb4ca860757b77c124f
   draw();
 })();
 </script>
