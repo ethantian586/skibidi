@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Stridelab — Agent Analysis</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏃</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@300;400;700;800&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:      #030308;
+    --surface: #0a0a14;
+    --border:  #1a1a2e;
+    --text:    #e8e8f0;
+    --muted:   #3a3a5c;
+    --accent:  #e8ff47;
+    --cyan:    #00f5ff;
+    --purple:  #6366f1;
+    --purple-border: rgba(99, 102, 241, 0.45);
+    --glow-cyan: rgba(0, 245, 255, 0.15);
+    --glow-purple: rgba(99, 102, 241, 0.2);
+    --green:   #22c55e;
+    --yellow:  #eab308;
+    --red:     #ef4444;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 24px 80px;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  #bg-canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+
+  .aurora {
+    position: fixed; top: -30%; left: -20%; width: 140%; height: 70%;
+    background:
+      radial-gradient(ellipse 50% 60% at 30% 50%, rgba(99,102,241,0.08) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 60% at 70% 50%, rgba(0,245,255,0.06) 0%, transparent 70%);
+    animation: aurora-drift 12s ease-in-out infinite alternate;
+    pointer-events: none; z-index: 0; filter: blur(40px);
+  }
+  @keyframes aurora-drift {
+    0%   { transform: translateX(-5%) translateY(0%) rotate(-2deg); opacity: 0.6; }
+    33%  { transform: translateX(3%) translateY(3%) rotate(1deg); opacity: 1; }
+    66%  { transform: translateX(-2%) translateY(-2%) rotate(-1deg); opacity: 0.7; }
+    100% { transform: translateX(5%) translateY(1%) rotate(2deg); opacity: 0.9; }
+  }
+
+  body::after {
+    content: '';
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,245,255,0.008) 2px, rgba(0,245,255,0.008) 4px);
+    pointer-events: none; z-index: 9999;
+  }
+
+  .logo, .container { position: relative; z-index: 1; }
+
+  .logo {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem; font-weight: 400;
+    letter-spacing: 0.4em; text-transform: uppercase;
+    color: var(--cyan); margin-bottom: 36px;
+    text-decoration: none;
+    text-shadow: 0 0 12px rgba(0,245,255,0.5);
+    transition: text-shadow 0.3s;
+  }
+  .logo:hover { text-shadow: 0 0 20px rgba(0,245,255,0.8); }
+
+  .container {
+    width: 100%; max-width: 1100px;
+    animation: fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) both;
+  }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+
+  .back-link {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: 'Space Mono', monospace; font-size: 0.62rem;
+    color: var(--muted); text-decoration: none; margin-bottom: 24px;
+    letter-spacing: 0.08em; text-transform: uppercase; transition: color 0.2s, text-shadow 0.2s;
+  }
+  .back-link:hover { color: var(--cyan); text-shadow: 0 0 8px rgba(0,245,255,0.4); }
+
+  /* ── Loading ── */
+  .loading { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; padding: 100px 0; }
+  .loading.hidden { display: none; }
+  .loading-spinner {
+    width: 48px; height: 48px;
+    border: 2px solid transparent; border-top-color: var(--cyan); border-right-color: rgba(99,102,241,0.5);
+    border-radius: 50%; animation: spin 0.7s linear infinite;
+    filter: drop-shadow(0 0 8px rgba(0,245,255,0.4));
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text {
+    font-family: 'Space Mono', monospace; font-size: 0.72rem;
+    color: var(--cyan); letter-spacing: 0.14em; text-transform: uppercase;
+    opacity: 0.7; animation: pulse-text 2s ease-in-out infinite;
+  }
+  @keyframes pulse-text { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+  /* ── Error ── */
+  .error-state { display: none; text-align: center; padding: 80px 0; }
+  .error-state.visible { display: block; }
+  .error-state p { font-family: 'Space Mono', monospace; font-size: 0.78rem; color: #ff5566; margin-bottom: 24px; text-shadow: 0 0 10px rgba(255,85,102,0.3); }
+  .error-state a {
+    font-family: 'Space Mono', monospace; font-size: 0.7rem; color: var(--cyan);
+    text-decoration: none; border: 1px solid rgba(0,245,255,0.3); padding: 10px 28px;
+    letter-spacing: 0.1em; text-transform: uppercase; transition: all 0.3s;
+  }
+  .error-state a:hover { background: rgba(0,245,255,0.08); border-color: var(--cyan); box-shadow: 0 0 20px rgba(0,245,255,0.15); }
+
+  /* ── Dashboard (hidden until loaded) ── */
+  .dashboard { display: none; }
+  .dashboard.visible { display: block; }
+
+  /* ── HUD Panel ── */
+  .hud-panel {
+    background: linear-gradient(180deg, rgba(10,10,20,0.95) 0%, rgba(6,6,14,0.98) 100%);
+    border: 1px solid var(--border); padding: 28px 24px 24px; position: relative; margin-bottom: 20px;
+  }
+  .hud-panel::before, .hud-panel::after {
+    content: ''; position: absolute; width: 20px; height: 20px;
+    border-color: var(--cyan); border-style: solid; opacity: 0.6;
+  }
+  .hud-panel::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+  .hud-panel::after  { top: -1px; right: -1px; border-width: 2px 2px 0 0; }
+  .hud-corners-bottom { position: absolute; bottom: 0; left: 0; right: 0; height: 0; pointer-events: none; }
+  .hud-corners-bottom::before, .hud-corners-bottom::after {
+    content: ''; position: absolute; width: 20px; height: 20px;
+    border-color: var(--cyan); border-style: solid; opacity: 0.6;
+  }
+  .hud-corners-bottom::before { bottom: 0; left: -1px; border-width: 0 0 2px 2px; }
+  .hud-corners-bottom::after  { bottom: 0; right: -1px; border-width: 0 2px 2px 0; }
+  .hud-panel .glow-line {
+    position: absolute; top: 0; left: 20px; right: 20px; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent); opacity: 0.3;
+  }
+
+  .section-title {
+    font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 800;
+    letter-spacing: 0.12em; text-transform: uppercase; color: var(--cyan);
+    margin-bottom: 6px; text-shadow: 0 0 20px rgba(0,245,255,0.3);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-title .tag {
+    font-family: 'Space Mono', monospace; font-size: 0.55rem; font-weight: 400;
+    color: var(--muted); background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.25);
+    padding: 3px 8px; letter-spacing: 0.1em; text-shadow: none;
+  }
+  .section-subtitle {
+    font-family: 'Space Mono', monospace; font-size: 0.6rem; color: var(--muted);
+    letter-spacing: 0.1em; margin-bottom: 22px; text-transform: uppercase;
+  }
+
+  /* ── Score Gauge ── */
+  .score-row {
+    display: flex; align-items: center; gap: 40px; flex-wrap: wrap;
+    justify-content: center;
+  }
+  .gauge-wrapper {
+    position: relative; width: 200px; height: 200px; flex-shrink: 0;
+  }
+  .gauge-svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .gauge-track { fill: none; stroke: var(--border); stroke-width: 8; }
+  .gauge-fill {
+    fill: none; stroke-width: 8; stroke-linecap: round;
+    transition: stroke-dashoffset 1.5s cubic-bezier(0.16,1,0.3,1), stroke 0.5s;
+  }
+  .gauge-center {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .gauge-number {
+    font-family: 'Syne', sans-serif; font-size: 3.2rem; font-weight: 800;
+    line-height: 1; letter-spacing: -0.02em;
+  }
+  .gauge-label {
+    font-family: 'Space Mono', monospace; font-size: 0.55rem;
+    color: var(--muted); letter-spacing: 0.18em; text-transform: uppercase; margin-top: 4px;
+  }
+  .gauge-grade {
+    font-family: 'Space Mono', monospace; font-size: 0.7rem; font-weight: 700;
+    letter-spacing: 0.12em; margin-top: 6px;
+  }
+
+  .score-summary {
+    flex: 1; min-width: 260px;
+  }
+  .score-summary p {
+    font-family: 'Space Mono', monospace; font-size: 0.72rem;
+    color: var(--text); line-height: 1.7; opacity: 0.85;
+  }
+
+  /* ── Metrics Table ── */
+  .metrics-table {
+    width: 100%; border-collapse: collapse; margin-top: 4px;
+  }
+  .metrics-table th {
+    font-family: 'Space Mono', monospace; font-size: 0.52rem;
+    color: var(--muted); letter-spacing: 0.14em; text-transform: uppercase;
+    text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .metrics-table td {
+    font-family: 'Space Mono', monospace; font-size: 0.7rem;
+    color: var(--text); padding: 10px 10px; border-bottom: 1px solid rgba(26,26,46,0.5);
+    vertical-align: middle;
+  }
+  .metrics-table tr:hover td { background: rgba(99,102,241,0.03); }
+
+  .metric-name { font-weight: 700; color: var(--cyan); font-size: 0.66rem; white-space: nowrap; }
+  .metric-value { text-align: center; }
+  .metric-optimal { text-align: center; color: var(--muted); font-size: 0.62rem; }
+  .metric-score { text-align: center; font-weight: 700; }
+
+  .score-bar-cell { width: 160px; }
+  .score-bar-track {
+    width: 100%; height: 6px; background: var(--surface);
+    border: 1px solid rgba(26,26,46,0.8); border-radius: 3px;
+    overflow: hidden; position: relative;
+  }
+  .score-bar-fill {
+    height: 100%; border-radius: 3px;
+    transition: width 1.2s cubic-bezier(0.16,1,0.3,1);
+  }
+
+  /* Asymmetry badge */
+  .asymmetry-badge {
+    display: inline-block;
+    font-family: 'Space Mono', monospace; font-size: 0.48rem;
+    color: var(--yellow); background: rgba(234,179,8,0.1);
+    border: 1px solid rgba(234,179,8,0.25);
+    padding: 1px 5px; margin-left: 6px;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    vertical-align: middle;
+  }
+
+  /* ── Feedback Terminal ── */
+  .feedback-terminal {
+    background: rgba(3,3,8,0.6); border: 1px solid var(--border);
+    padding: 20px 22px; font-family: 'Space Mono', monospace;
+    font-size: 0.68rem; line-height: 1.8; color: var(--text); opacity: 0.9;
+    position: relative; overflow: hidden;
+  }
+  .feedback-terminal::before {
+    content: '> AGENT ANALYSIS';
+    display: block; color: var(--cyan); font-weight: 700;
+    letter-spacing: 0.14em; margin-bottom: 14px; font-size: 0.58rem;
+  }
+  .feedback-terminal .strength { color: var(--green); }
+  .feedback-terminal .weakness { color: var(--red); }
+  .feedback-terminal .warning  { color: var(--yellow); }
+  .feedback-terminal .label    { color: var(--cyan); font-weight: 700; font-size: 0.58rem; letter-spacing: 0.1em; display: block; margin-top: 14px; margin-bottom: 4px; }
+  .feedback-terminal p { margin-bottom: 6px; }
+
+  /* ── Charts Grid ── */
+  .charts-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;
+  }
+  .chart-card {
+    background: rgba(6,6,14,0.8); border: 1px solid var(--border);
+    padding: 16px 14px 10px; position: relative;
+  }
+  .chart-card .chart-title {
+    font-family: 'Space Mono', monospace; font-size: 0.58rem;
+    color: var(--cyan); letter-spacing: 0.12em; text-transform: uppercase;
+    margin-bottom: 8px; font-weight: 700;
+  }
+  .chart-card canvas { width: 100%; height: 140px; display: block; }
+
+  /* Trunk chart spans full width */
+  .chart-card.full-width { grid-column: 1 / -1; }
+  .chart-card.full-width canvas { height: 120px; }
+
+  /* ── Status Bar ── */
+  .status-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-top: 14px; margin-top: 8px; border-top: 1px solid var(--border);
+    font-family: 'Space Mono', monospace; font-size: 0.52rem;
+    color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .status-bar .status-dot {
+    display: inline-block; width: 5px; height: 5px; background: var(--accent);
+    border-radius: 50%; margin-right: 6px; animation: blink-dot 2s ease-in-out infinite;
+    box-shadow: 0 0 6px rgba(232,255,71,0.5);
+  }
+  @keyframes blink-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  @media (max-width: 700px) {
+    .charts-grid { grid-template-columns: 1fr; }
+    .score-row { flex-direction: column; align-items: center; gap: 24px; }
+    .hud-panel { padding: 20px 14px 16px; }
+    .metrics-table { font-size: 0.6rem; }
+    .score-bar-cell { width: 100px; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+<div class="aurora"></div>
+
+<a class="logo" href="/">Stridelab</a>
+
+<div class="container">
+  <a class="back-link" href="/">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="15 18 9 12 15 6"/>
+    </svg>
+    Back to upload
+  </a>
+
+  <!-- Loading -->
+  <div class="loading" id="loading">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Analyzing biomechanics…</div>
+  </div>
+
+  <!-- Error -->
+  <div class="error-state" id="error-state">
+    <p id="error-text">Could not load analysis data.</p>
+    <a href="/">Upload another video</a>
+  </div>
+
+  <!-- Dashboard -->
+  <div class="dashboard" id="dashboard">
+
+    <!-- Section A: Overall Score -->
+    <div class="hud-panel">
+      <div class="glow-line"></div>
+      <div class="hud-corners-bottom"></div>
+      <div class="section-title">Sprint Score <span class="tag">Overall</span></div>
+      <div class="section-subtitle">Heuristic biomechanical assessment</div>
+
+      <div class="score-row">
+        <div class="gauge-wrapper">
+          <svg class="gauge-svg" viewBox="0 0 200 200">
+            <circle class="gauge-track" cx="100" cy="100" r="85"/>
+            <circle class="gauge-fill" id="gauge-fill" cx="100" cy="100" r="85"
+                    stroke-dasharray="534.07" stroke-dashoffset="534.07"/>
+          </svg>
+          <div class="gauge-center">
+            <div class="gauge-number" id="gauge-number">—</div>
+            <div class="gauge-label">Sprint Score</div>
+            <div class="gauge-grade" id="gauge-grade"></div>
+          </div>
+        </div>
+        <div class="score-summary" id="score-summary">
+          <p>Loading analysis…</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section B: Metrics Table -->
+    <div class="hud-panel">
+      <div class="glow-line"></div>
+      <div class="hud-corners-bottom"></div>
+      <div class="section-title">Key Metrics <span class="tag">Angles</span></div>
+      <div class="section-subtitle">Per-joint biomechanical scoring</div>
+
+      <table class="metrics-table">
+        <thead>
+          <tr>
+            <th>Joint</th>
+            <th style="text-align:center">Avg Angle</th>
+            <th style="text-align:center">Optimal</th>
+            <th style="text-align:center">Score</th>
+            <th>Range</th>
+          </tr>
+        </thead>
+        <tbody id="metrics-body"></tbody>
+      </table>
+    </div>
+
+    <!-- Section C: AI Feedback -->
+    <div class="hud-panel">
+      <div class="glow-line"></div>
+      <div class="hud-corners-bottom"></div>
+      <div class="section-title">Agent Feedback <span class="tag">Heuristic</span></div>
+      <div class="section-subtitle">Biomechanical strengths and areas for improvement</div>
+
+      <div class="feedback-terminal" id="feedback-terminal">
+        <p>Processing…</p>
+      </div>
+    </div>
+
+    <!-- Section D: Angle Charts -->
+    <div class="hud-panel">
+      <div class="glow-line"></div>
+      <div class="hud-corners-bottom"></div>
+      <div class="section-title">Angle Traces <span class="tag">Time Series</span></div>
+      <div class="section-subtitle">Joint angles over time with optimal range overlay</div>
+
+      <div class="charts-grid" id="charts-grid"></div>
+    </div>
+
+    <!-- Status Bar -->
+    <div class="hud-panel" style="padding: 12px 24px;">
+      <div class="status-bar" style="border: none; padding: 0; margin: 0;">
+        <span><span class="status-dot"></span>Agent analysis complete</span>
+        <span id="status-info">—</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const jobId  = params.get("job");
+
+const loadingEl   = document.getElementById("loading");
+const errorEl     = document.getElementById("error-state");
+const errorText   = document.getElementById("error-text");
+const dashboardEl = document.getElementById("dashboard");
+
+function showError(msg) {
+  loadingEl.classList.add("hidden");
+  errorText.textContent = msg;
+  errorEl.classList.add("visible");
+}
+
+// ── Heuristic scoring config ──
+const METRICS = [
+  { key: "R Hip",    label: "Right Hip",    optMin: 75, optMax: 105, weight: 0.15 },
+  { key: "L Hip",    label: "Left Hip",     optMin: 75, optMax: 105, weight: 0.15 },
+  { key: "R Knee",   label: "Right Knee",   optMin: 90, optMax: 160, weight: 0.15 },
+  { key: "L Knee",   label: "Left Knee",    optMin: 90, optMax: 160, weight: 0.15 },
+  { key: "R Elbow",  label: "Right Elbow",  optMin: 80, optMax: 110, weight: 0.075 },
+  { key: "L Elbow",  label: "Left Elbow",   optMin: 80, optMax: 110, weight: 0.075 },
+  { key: "Trunk",    label: "Trunk Lean",   optMin: 5,  optMax: 25,  weight: 0.25 },
+];
+
+// Score an individual metric: 100 if within optimal, drops linearly outside
+function scoreMetric(mean, optMin, optMax) {
+  if (mean === null || isNaN(mean)) return 0;
+  if (mean >= optMin && mean <= optMax) return 100;
+  const range = optMax - optMin;
+  if (mean < optMin) {
+    const dist = optMin - mean;
+    return Math.max(0, Math.round(100 - (dist / range) * 100));
+  } else {
+    const dist = mean - optMax;
+    return Math.max(0, Math.round(100 - (dist / range) * 100));
+  }
+}
+
+function scoreColor(score) {
+  if (score >= 80) return "var(--green)";
+  if (score >= 60) return "var(--yellow)";
+  return "var(--red)";
+}
+
+function gradeFromScore(score) {
+  if (score >= 90) return "ELITE";
+  if (score >= 80) return "EXCELLENT";
+  if (score >= 70) return "GOOD";
+  if (score >= 60) return "FAIR";
+  if (score >= 40) return "NEEDS WORK";
+  return "POOR";
+}
+
+// ── Render the gauge ──
+function renderGauge(score) {
+  const circumference = 2 * Math.PI * 85; // ~534.07
+  const offset = circumference - (score / 100) * circumference;
+  const fill = document.getElementById("gauge-fill");
+  const num  = document.getElementById("gauge-number");
+  const grade = document.getElementById("gauge-grade");
+
+  fill.style.stroke = scoreColor(score);
+  fill.style.filter = `drop-shadow(0 0 8px ${scoreColor(score)})`;
+
+  // Animate after a brief delay
+  setTimeout(() => {
+    fill.style.strokeDashoffset = offset;
+  }, 200);
+
+  // Count-up animation
+  let current = 0;
+  const step = Math.max(1, Math.floor(score / 40));
+  const counter = setInterval(() => {
+    current = Math.min(current + step, score);
+    num.textContent = current;
+    num.style.color = scoreColor(current);
+    if (current >= score) {
+      clearInterval(counter);
+      num.textContent = score;
+    }
+  }, 30);
+
+  grade.textContent = gradeFromScore(score);
+  grade.style.color = scoreColor(score);
+}
+
+// ── Render the metrics table ──
+function renderMetrics(results) {
+  const tbody = document.getElementById("metrics-body");
+  tbody.innerHTML = "";
+
+  for (const r of results) {
+    const tr = document.createElement("tr");
+    const color = scoreColor(r.score);
+
+    // Check for L/R asymmetry
+    let asymBadge = "";
+    if (r.pair) {
+      const diff = Math.abs(r.mean - r.pair.mean);
+      if (diff > 10) {
+        asymBadge = `<span class="asymmetry-badge">ASYMMETRY ${diff.toFixed(0)}°</span>`;
+      }
+    }
+
+    tr.innerHTML = `
+      <td class="metric-name">${r.label}${asymBadge}</td>
+      <td class="metric-value">${r.mean !== null ? r.mean.toFixed(1) + "°" : "N/A"}</td>
+      <td class="metric-optimal">${r.optMin}° – ${r.optMax}°</td>
+      <td class="metric-score" style="color:${color}">${r.score}</td>
+      <td class="score-bar-cell">
+        <div class="score-bar-track">
+          <div class="score-bar-fill" style="width:0%;background:${color}"></div>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+
+    // Animate bar after append
+    setTimeout(() => {
+      tr.querySelector(".score-bar-fill").style.width = r.score + "%";
+    }, 100);
+  }
+}
+
+// ── Generate feedback text ──
+function renderFeedback(results, overallScore) {
+  const terminal = document.getElementById("feedback-terminal");
+
+  // Sort by score
+  const sorted = [...results].sort((a, b) => b.score - a.score);
+  const strengths = sorted.filter(r => r.score >= 75).slice(0, 2);
+  const weaknesses = sorted.filter(r => r.score < 75).sort((a, b) => a.score - b.score).slice(0, 2);
+
+  // Check asymmetries
+  const asymmetries = [];
+  const pairs = [["R Hip", "L Hip"], ["R Knee", "L Knee"], ["R Elbow", "L Elbow"]];
+  for (const [rKey, lKey] of pairs) {
+    const rr = results.find(r => r.key === rKey);
+    const lr = results.find(r => r.key === lKey);
+    if (rr && lr && rr.mean !== null && lr.mean !== null) {
+      const diff = Math.abs(rr.mean - lr.mean);
+      if (diff > 10) {
+        const joint = rKey.replace("R ", "");
+        asymmetries.push({ joint, diff, rMean: rr.mean, lMean: lr.mean });
+      }
+    }
+  }
+
+  let html = "";
+
+  // Overall assessment
+  html += `<span class="label">OVERALL ASSESSMENT</span>`;
+  if (overallScore >= 80) {
+    html += `<p class="strength">Strong sprint mechanics detected. Your joint angles are consistently within or near optimal biomechanical ranges. Focus on maintaining consistency across strides.</p>`;
+  } else if (overallScore >= 60) {
+    html += `<p>Moderate sprint mechanics with room for improvement. Several joint angles deviate from optimal ranges. Targeted drills can improve efficiency and speed.</p>`;
+  } else {
+    html += `<p class="weakness">Significant biomechanical deviations detected. Multiple joint angles fall outside optimal sprint ranges. Focused technique work is recommended.</p>`;
+  }
+
+  // Strengths
+  if (strengths.length > 0) {
+    html += `<span class="label">STRENGTHS</span>`;
+    for (const s of strengths) {
+      html += `<p class="strength">+ ${s.label}: Averaging ${s.mean.toFixed(1)}° (optimal: ${s.optMin}°–${s.optMax}°). Score: ${s.score}/100.</p>`;
+    }
+  }
+
+  // Weaknesses
+  if (weaknesses.length > 0) {
+    html += `<span class="label">AREAS FOR IMPROVEMENT</span>`;
+    for (const w of weaknesses) {
+      const direction = w.mean < w.optMin ? "below" : "above";
+      html += `<p class="weakness">- ${w.label}: Averaging ${w.mean.toFixed(1)}° (${direction} optimal ${w.optMin}°–${w.optMax}°). Score: ${w.score}/100.</p>`;
+    }
+  }
+
+  // Asymmetry warnings
+  if (asymmetries.length > 0) {
+    html += `<span class="label">ASYMMETRY WARNINGS</span>`;
+    for (const a of asymmetries) {
+      html += `<p class="warning">⚠ ${a.joint} asymmetry: R=${a.rMean.toFixed(1)}° vs L=${a.lMean.toFixed(1)}° (${a.diff.toFixed(1)}° difference). Consider unilateral strength exercises.</p>`;
+    }
+  }
+
+  terminal.innerHTML = html;
+}
+
+// ── Render a single angle chart ──
+function renderChart(container, label, frames, angleKey, optMin, optMax) {
+  const card = document.createElement("div");
+  card.className = "chart-card" + (angleKey === "Trunk" ? " full-width" : "");
+  card.innerHTML = `<div class="chart-title">${label}</div>`;
+
+  const canvas = document.createElement("canvas");
+  card.appendChild(canvas);
+  container.appendChild(card);
+
+  // Wait for layout
+  requestAnimationFrame(() => {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width  = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(dpr, dpr);
+    const W = rect.width;
+    const H = rect.height;
+
+    // Extract values
+    const values = frames.map(f => (f.angles && f.angles[angleKey]) ?? null);
+    const times  = frames.map(f => f.time ?? 0);
+    const validValues = values.filter(v => v !== null);
+    if (validValues.length === 0) return;
+
+    const dataMin = Math.min(...validValues, optMin) - 10;
+    const dataMax = Math.max(...validValues, optMax) + 10;
+    const tMax = times[times.length - 1] || 1;
+
+    const PAD_L = 36, PAD_R = 10, PAD_T = 8, PAD_B = 22;
+    const plotW = W - PAD_L - PAD_R;
+    const plotH = H - PAD_T - PAD_B;
+
+    function toX(t) { return PAD_L + (t / tMax) * plotW; }
+    function toY(v) { return PAD_T + plotH - ((v - dataMin) / (dataMax - dataMin)) * plotH; }
+
+    // Optimal range band
+    ctx.fillStyle = "rgba(34, 197, 94, 0.06)";
+    ctx.fillRect(PAD_L, toY(optMax), plotW, toY(optMin) - toY(optMax));
+
+    // Optimal range borders
+    ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = "rgba(34, 197, 94, 0.25)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(PAD_L, toY(optMin)); ctx.lineTo(PAD_L + plotW, toY(optMin));
+    ctx.moveTo(PAD_L, toY(optMax)); ctx.lineTo(PAD_L + plotW, toY(optMax));
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Grid lines
+    ctx.strokeStyle = "rgba(26, 26, 46, 0.6)";
+    ctx.lineWidth = 0.5;
+    const ySteps = 4;
+    for (let i = 0; i <= ySteps; i++) {
+      const v = dataMin + (dataMax - dataMin) * (i / ySteps);
+      const y = toY(v);
+      ctx.beginPath(); ctx.moveTo(PAD_L, y); ctx.lineTo(PAD_L + plotW, y); ctx.stroke();
+
+      ctx.fillStyle = "rgba(58, 58, 92, 0.8)";
+      ctx.font = "9px 'Space Mono', monospace";
+      ctx.textAlign = "right";
+      ctx.fillText(Math.round(v) + "°", PAD_L - 4, y + 3);
+    }
+
+    // X-axis labels
+    ctx.fillStyle = "rgba(58, 58, 92, 0.8)";
+    ctx.textAlign = "center";
+    ctx.font = "9px 'Space Mono', monospace";
+    const xSteps = 5;
+    for (let i = 0; i <= xSteps; i++) {
+      const t = (tMax * i) / xSteps;
+      ctx.fillText(t.toFixed(1) + "s", toX(t), H - 4);
+    }
+
+    // Data line
+    ctx.strokeStyle = "rgba(0, 245, 255, 0.8)";
+    ctx.lineWidth = 1.5;
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+    let started = false;
+    for (let i = 0; i < values.length; i++) {
+      if (values[i] === null) continue;
+      const x = toX(times[i]);
+      const y = toY(values[i]);
+      if (!started) { ctx.moveTo(x, y); started = true; }
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // Glow effect
+    ctx.strokeStyle = "rgba(0, 245, 255, 0.15)";
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    started = false;
+    for (let i = 0; i < values.length; i++) {
+      if (values[i] === null) continue;
+      const x = toX(times[i]);
+      const y = toY(values[i]);
+      if (!started) { ctx.moveTo(x, y); started = true; }
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  });
+}
+
+// ── Main ──
+async function init() {
+  if (!jobId) { showError("No job ID provided."); return; }
+
+  let analysis;
+  try {
+    const res = await fetch(`/analysis-data/${jobId}`);
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    analysis = await res.json();
+  } catch (e) {
+    showError("Could not load analysis data: " + e.message);
+    return;
+  }
+
+  const fps    = analysis.fps || 30;
+  const frames = analysis.frames || [];
+  const summary = analysis.summary || {};
+
+  if (frames.length === 0) {
+    showError("No frame data available for this job.");
+    return;
+  }
+
+  // Compute per-metric scores
+  const results = METRICS.map(m => {
+    const stats = summary[m.key];
+    const mean = stats ? stats.mean : null;
+    const score = scoreMetric(mean, m.optMin, m.optMax);
+    return { ...m, mean, score };
+  });
+
+  // Link L/R pairs for asymmetry detection
+  const pairMap = { "R Hip": "L Hip", "L Hip": "R Hip", "R Knee": "L Knee", "L Knee": "R Knee", "R Elbow": "L Elbow", "L Elbow": "R Elbow" };
+  for (const r of results) {
+    if (pairMap[r.key]) {
+      r.pair = results.find(x => x.key === pairMap[r.key]);
+    }
+  }
+
+  // Overall score (weighted average)
+  const overallScore = Math.round(results.reduce((sum, r) => sum + r.score * r.weight, 0) / results.reduce((sum, r) => sum + r.weight, 0));
+
+  // Hide loading, show dashboard
+  loadingEl.classList.add("hidden");
+  dashboardEl.classList.add("visible");
+
+  // Render sections
+  renderGauge(overallScore);
+  renderMetrics(results);
+  renderFeedback(results, overallScore);
+
+  // Score summary text
+  const summaryEl = document.getElementById("score-summary");
+  const grade = gradeFromScore(overallScore);
+  summaryEl.innerHTML = `<p>Your overall sprint score is <strong style="color:${scoreColor(overallScore)}">${overallScore}/100 (${grade})</strong>. This score is computed from a weighted analysis of 7 joint angles against optimal biomechanical ranges for sprint running. Hip and trunk angles carry the most weight as they are the primary drivers of sprint mechanics.</p>`;
+
+  // Render charts
+  const chartsGrid = document.getElementById("charts-grid");
+  for (const m of METRICS) {
+    renderChart(chartsGrid, m.label, frames, m.key, m.optMin, m.optMax);
+  }
+
+  // Status bar
+  const statusInfo = document.getElementById("status-info");
+  const dur = analysis.duration_s ? analysis.duration_s.toFixed(1) + "s" : "—";
+  statusInfo.textContent = `${fps} fps  ·  ${dur}  ·  ${frames.length} frames`;
+}
+
+init();
+</script>
+
+<!-- Animated particle background -->
+<script>
+(function() {
+  const canvas = document.getElementById('bg-canvas');
+  const ctx = canvas.getContext('2d');
+  let w, h, particles, gridPhase = 0;
+
+  function resize() {
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  const PARTICLE_COUNT = 60;
+  particles = [];
+  for (let i = 0; i < PARTICLE_COUNT; i++) {
+    particles.push({
+      x: Math.random() * w, y: Math.random() * h,
+      vx: (Math.random() - 0.5) * 0.3, vy: (Math.random() - 0.5) * 0.3,
+      r: Math.random() * 1.5 + 0.5, alpha: Math.random() * 0.4 + 0.1,
+      color: Math.random() > 0.5 ? '0,245,255' : '99,102,241',
+      pulse: Math.random() * Math.PI * 2, pulseSpeed: Math.random() * 0.02 + 0.005,
+    });
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+    gridPhase += 0.003;
+
+    const gridSize = 40, gridAlphaBase = 0.025;
+    ctx.lineWidth = 0.5;
+    for (let x = 0; x < w; x += gridSize) {
+      const wave = Math.sin(x * 0.005 + gridPhase) * 0.015 + gridAlphaBase;
+      ctx.strokeStyle = `rgba(0,245,255,${wave})`;
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+    }
+    for (let y = 0; y < h; y += gridSize) {
+      const wave = Math.sin(y * 0.005 + gridPhase * 1.3) * 0.015 + gridAlphaBase;
+      ctx.strokeStyle = `rgba(0,245,255,${wave})`;
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+    }
+
+    for (const p of particles) {
+      p.x += p.vx; p.y += p.vy; p.pulse += p.pulseSpeed;
+      if (p.x < -10) p.x = w + 10; if (p.x > w + 10) p.x = -10;
+      if (p.y < -10) p.y = h + 10; if (p.y > h + 10) p.y = -10;
+      const pulseAlpha = p.alpha * (0.6 + 0.4 * Math.sin(p.pulse));
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 4, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${p.color},${pulseAlpha * 0.15})`; ctx.fill();
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${p.color},${pulseAlpha})`; ctx.fill();
+    }
+
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 120) {
+          ctx.strokeStyle = `rgba(0,245,255,${(1 - dist / 120) * 0.08})`;
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+</script>
+</body>
+</html>

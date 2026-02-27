@@ -491,6 +491,31 @@
     box-shadow: 0 0 20px rgba(0, 245, 255, 0.15);
   }
 
+  .btn-agent {
+    flex: 1;
+    padding: 12px;
+    background: none;
+    color: var(--purple);
+    border: 1px solid rgba(99, 102, 241, 0.35);
+    font-family: 'Syne', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  }
+  .btn-agent:hover {
+    background: rgba(99, 102, 241, 0.08);
+    border-color: var(--purple);
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+  }
+
   .btn-another {
     padding: 12px 20px;
     background: none;
@@ -605,6 +630,13 @@
           </svg>
           View Analysis
         </a>
+        <a class="btn-agent" id="btn-agent" href="#">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 1v2m0 18v2m-9-11h2m18 0h2m-3.3-6.7-1.4 1.4M5.7 18.3l-1.4 1.4m0-13.4 1.4 1.4m12.6 12.6 1.4 1.4"/>
+          </svg>
+          Agent Analysis
+        </a>
         <button class="btn-another" id="btn-another">New</button>
       </div>
     </div>
@@ -641,6 +673,7 @@
   const resultVideo     = document.getElementById("result-video");
   const btnDownload     = document.getElementById("btn-download");
   const btnAnalysis     = document.getElementById("btn-analysis");
+  const btnAgent        = document.getElementById("btn-agent");
   const btnAnother      = document.getElementById("btn-another");
 
   // Cycling warmup messages
@@ -832,6 +865,7 @@
     btnDownload.href = url;
     btnDownload.setAttribute("download", `sprint_${jobId.slice(0, 8)}.mp4`);
     btnAnalysis.href = `/analysis.html?job=${jobId}`;
+    btnAgent.href    = `/agent.html?job=${jobId}`;
     progressSection.classList.remove("visible");
     resultSection.classList.add("visible");
   }
