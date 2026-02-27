@@ -11,15 +11,17 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --bg:      #050507;
-    --surface: #0d0d12;
-    --border:  #1a1a24;
+    --bg:      #030308;
+    --surface: #0a0a14;
+    --border:  #1a1a2e;
     --text:    #e8e8f0;
-    --muted:   #44445a;
+    --muted:   #3a3a5c;
     --accent:  #e8ff47;
     --cyan:    #00f5ff;
     --purple:  #6366f1;
-    --purple-border: rgba(99, 102, 241, 0.5);
+    --purple-border: rgba(99, 102, 241, 0.45);
+    --glow-cyan: rgba(0, 245, 255, 0.15);
+    --glow-purple: rgba(99, 102, 241, 0.2);
   }
 
   body {
@@ -33,9 +35,28 @@
     align-items: center;
     padding: 32px 24px;
     background-image:
-      linear-gradient(rgba(0,245,255,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,245,255,0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
+      radial-gradient(ellipse 80% 60% at 50% 0%, rgba(99,102,241,0.06) 0%, transparent 60%),
+      linear-gradient(rgba(0,245,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,245,255,0.025) 1px, transparent 1px);
+    background-size: 100% 100%, 40px 40px, 40px 40px;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* Subtle scan line overlay */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 245, 255, 0.008) 2px,
+      rgba(0, 245, 255, 0.008) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
   }
 
   .logo {
@@ -46,9 +67,11 @@
     text-transform: uppercase;
     color: var(--cyan);
     margin-bottom: 36px;
-    opacity: 0.7;
     text-decoration: none;
+    text-shadow: 0 0 12px rgba(0, 245, 255, 0.5);
+    transition: text-shadow 0.3s;
   }
+  .logo:hover { text-shadow: 0 0 20px rgba(0, 245, 255, 0.8); }
 
   .container {
     width: 100%;
@@ -67,43 +90,121 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 18px;
-    padding: 80px 0;
+    gap: 20px;
+    padding: 100px 0;
   }
   .loading.hidden { display: none; }
 
   .loading-spinner {
-    width: 40px; height: 40px;
-    border: 2px solid var(--border);
+    width: 48px; height: 48px;
+    border: 2px solid transparent;
     border-top-color: var(--cyan);
+    border-right-color: rgba(99,102,241,0.5);
     border-radius: 50%;
-    animation: spin 0.8s linear infinite;
+    animation: spin 0.7s linear infinite;
+    filter: drop-shadow(0 0 8px rgba(0,245,255,0.4));
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 
   .loading-text {
     font-family: 'Space Mono', monospace;
     font-size: 0.72rem;
-    color: var(--muted);
-    letter-spacing: 0.1em;
+    color: var(--cyan);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    opacity: 0.7;
+    animation: pulse-text 2s ease-in-out infinite;
+  }
+  @keyframes pulse-text {
+    0%, 100% { opacity: 0.5; }
+    50%      { opacity: 1; }
   }
 
   /* ── Kinogram section ── */
   .kinogram { display: none; }
   .kinogram.visible { display: block; }
 
+  /* HUD panel wrapper */
+  .hud-panel {
+    background: linear-gradient(180deg, rgba(10,10,20,0.95) 0%, rgba(6,6,14,0.98) 100%);
+    border: 1px solid var(--border);
+    padding: 28px 24px 24px;
+    position: relative;
+    margin-bottom: 0;
+  }
+
+  /* Corner brackets */
+  .hud-panel::before, .hud-panel::after {
+    content: '';
+    position: absolute;
+    width: 20px; height: 20px;
+    border-color: var(--cyan);
+    border-style: solid;
+    opacity: 0.6;
+  }
+  .hud-panel::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+  .hud-panel::after  { top: -1px; right: -1px; border-width: 2px 2px 0 0; }
+  .hud-panel-bottom::before { bottom: -1px; left: -1px; border-width: 0 0 2px 2px; top: auto; }
+  .hud-panel-bottom::after  { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; top: auto; }
+
+  /* Extra bottom corners via inner div */
+  .hud-corners-bottom {
+    position: absolute;
+    bottom: 0; left: 0; right: 0; height: 0;
+    pointer-events: none;
+  }
+  .hud-corners-bottom::before, .hud-corners-bottom::after {
+    content: '';
+    position: absolute;
+    width: 20px; height: 20px;
+    border-color: var(--cyan);
+    border-style: solid;
+    opacity: 0.6;
+  }
+  .hud-corners-bottom::before { bottom: 0; left: -1px; border-width: 0 0 2px 2px; }
+  .hud-corners-bottom::after  { bottom: 0; right: -1px; border-width: 0 2px 2px 0; }
+
+  /* Glow line at top of panel */
+  .hud-panel .glow-line {
+    position: absolute;
+    top: 0; left: 20px; right: 20px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+    opacity: 0.3;
+  }
+
   .section-title {
     font-family: 'Syne', sans-serif;
-    font-size: 1.1rem;
+    font-size: 1.2rem;
     font-weight: 800;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: var(--text);
-    margin-bottom: 20px;
-    background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.5) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--cyan);
+    margin-bottom: 6px;
+    text-shadow: 0 0 20px rgba(0, 245, 255, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title .tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.55rem;
+    font-weight: 400;
+    color: var(--muted);
+    background: rgba(99,102,241,0.1);
+    border: 1px solid rgba(99,102,241,0.25);
+    padding: 3px 8px;
+    letter-spacing: 0.1em;
+    text-shadow: none;
+  }
+
+  .section-subtitle {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    margin-bottom: 22px;
+    text-transform: uppercase;
   }
 
   /* Phase labels row */
@@ -111,17 +212,20 @@
     display: grid;
     grid-template-columns: repeat(6, 1fr);
     gap: 8px;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
   }
 
   .phase-label {
-    font-family: 'Syne', sans-serif;
-    font-size: 0.68rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.58rem;
     font-weight: 700;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
     text-align: center;
-    color: var(--muted);
+    color: var(--cyan);
+    opacity: 0.7;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(0, 245, 255, 0.1);
   }
 
   /* Filmstrip grid */
@@ -129,19 +233,58 @@
     display: grid;
     grid-template-columns: repeat(6, 1fr);
     gap: 8px;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
   }
 
   .frame-cell {
     aspect-ratio: 16 / 10;
     background: var(--surface);
-    border: 2px solid var(--purple-border);
-    border-radius: 4px;
+    border: 1px solid var(--purple-border);
     overflow: hidden;
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+
+  /* HUD corner brackets on each frame */
+  .frame-cell::before, .frame-cell::after {
+    content: '';
+    position: absolute;
+    width: 10px; height: 10px;
+    border-color: var(--cyan);
+    border-style: solid;
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 2;
+    pointer-events: none;
+  }
+  .frame-cell::before { top: 3px; left: 3px; border-width: 1px 0 0 1px; }
+  .frame-cell::after  { bottom: 3px; right: 3px; border-width: 0 1px 1px 0; }
+
+  .frame-cell:hover {
+    border-color: var(--cyan);
+    box-shadow: 0 0 20px rgba(0, 245, 255, 0.15), inset 0 0 20px rgba(0, 245, 255, 0.03);
+  }
+  .frame-cell:hover::before, .frame-cell:hover::after { opacity: 0.7; }
+
+  /* Scan line on each frame */
+  .frame-cell .scan-line {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(0, 245, 255, 0.4), transparent);
+    animation: scan-down 3s ease-in-out infinite;
+    z-index: 2;
+    pointer-events: none;
+    opacity: 0;
+  }
+  .frame-cell:hover .scan-line { opacity: 1; }
+
+  @keyframes scan-down {
+    0%   { top: 0%; }
+    100% { top: 100%; }
   }
 
   .frame-cell img,
@@ -156,9 +299,22 @@
   .frame-cell .placeholder {
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, var(--surface) 25%, #151520 50%, var(--surface) 75%);
+    background: linear-gradient(90deg, var(--surface) 25%, rgba(99,102,241,0.06) 50%, var(--surface) 75%);
     background-size: 200% 100%;
-    animation: shimmer-load 1.5s infinite;
+    animation: shimmer-load 1.8s ease-in-out infinite;
+    position: relative;
+  }
+
+  /* Crosshair in placeholder */
+  .frame-cell .placeholder::before {
+    content: '+';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Space Mono', monospace;
+    font-size: 1rem;
+    color: var(--muted);
+    opacity: 0.3;
   }
 
   @keyframes shimmer-load {
@@ -169,38 +325,51 @@
   /* Row labels */
   .row-label {
     font-family: 'Space Mono', monospace;
-    font-size: 0.6rem;
-    color: var(--muted);
-    letter-spacing: 0.1em;
-    margin-bottom: 14px;
+    font-size: 0.58rem;
+    color: var(--accent);
+    letter-spacing: 0.14em;
+    margin-bottom: 10px;
     text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .row-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(232, 255, 71, 0.2), transparent);
   }
 
   /* ── Error state ── */
   .error-state {
     display: none;
     text-align: center;
-    padding: 60px 0;
+    padding: 80px 0;
   }
   .error-state.visible { display: block; }
   .error-state p {
     font-family: 'Space Mono', monospace;
     font-size: 0.78rem;
-    color: #ff7788;
-    margin-bottom: 20px;
+    color: #ff5566;
+    margin-bottom: 24px;
+    text-shadow: 0 0 10px rgba(255, 85, 102, 0.3);
   }
   .error-state a {
-    font-family: 'Syne', sans-serif;
-    font-size: 0.78rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
     color: var(--cyan);
     text-decoration: none;
-    border: 1px solid var(--cyan);
-    padding: 10px 24px;
-    transition: background 0.2s, color 0.2s;
+    border: 1px solid rgba(0, 245, 255, 0.3);
+    padding: 10px 28px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    transition: all 0.3s;
   }
   .error-state a:hover {
-    background: var(--cyan);
-    color: var(--bg);
+    background: rgba(0, 245, 255, 0.08);
+    border-color: var(--cyan);
+    box-shadow: 0 0 20px rgba(0, 245, 255, 0.15);
   }
 
   /* ── Back link ── */
@@ -209,19 +378,52 @@
     align-items: center;
     gap: 6px;
     font-family: 'Space Mono', monospace;
-    font-size: 0.68rem;
+    font-size: 0.62rem;
     color: var(--muted);
     text-decoration: none;
-    margin-bottom: 28px;
-    letter-spacing: 0.06em;
-    transition: color 0.2s;
+    margin-bottom: 24px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transition: color 0.2s, text-shadow 0.2s;
   }
-  .back-link:hover { color: var(--cyan); }
+  .back-link:hover {
+    color: var(--cyan);
+    text-shadow: 0 0 8px rgba(0, 245, 255, 0.4);
+  }
+
+  /* ── Status bar at bottom ── */
+  .status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 14px;
+    margin-top: 8px;
+    border-top: 1px solid var(--border);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.52rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .status-bar .status-dot {
+    display: inline-block;
+    width: 5px; height: 5px;
+    background: var(--accent);
+    border-radius: 50%;
+    margin-right: 6px;
+    animation: blink-dot 2s ease-in-out infinite;
+    box-shadow: 0 0 6px rgba(232, 255, 71, 0.5);
+  }
+  @keyframes blink-dot {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.3; }
+  }
 
   @media (max-width: 700px) {
     .phase-labels, .filmstrip {
       grid-template-columns: repeat(3, 1fr);
     }
+    .hud-panel { padding: 20px 14px 16px; }
   }
 </style>
 </head>
@@ -231,16 +433,16 @@
 
 <div class="container">
   <a class="back-link" href="/">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <polyline points="15 18 9 12 15 6"/>
     </svg>
-    Back
+    Back to upload
   </a>
 
   <!-- Loading -->
   <div class="loading" id="loading">
     <div class="loading-spinner"></div>
-    <div class="loading-text">Loading analysis…</div>
+    <div class="loading-text">Extracting frames…</div>
   </div>
 
   <!-- Error -->
@@ -251,38 +453,53 @@
 
   <!-- Kinogram -->
   <div class="kinogram" id="kinogram">
-    <div class="section-title">Running Kinogram</div>
+    <div class="hud-panel">
+      <div class="glow-line"></div>
+      <div class="hud-corners-bottom"></div>
 
-    <!-- Phase column headers -->
-    <div class="phase-labels">
-      <div class="phase-label">MVP</div>
-      <div class="phase-label">Strike</div>
-      <div class="phase-label">Touch Down</div>
-      <div class="phase-label">Full Support</div>
-      <div class="phase-label">Mid Swing</div>
-      <div class="phase-label">Toe Off</div>
-    </div>
+      <div class="section-title">
+        Running Kinogram
+        <span class="tag">Gait Phases</span>
+      </div>
+      <div class="section-subtitle">Biomechanical frame capture — 6 key phases per stride</div>
 
-    <!-- Row 1: Stride 1 -->
-    <div class="row-label" id="row1-label">Stride 1</div>
-    <div class="filmstrip" id="filmstrip-row1">
-      <div class="frame-cell"><div class="placeholder"></div></div>
-      <div class="frame-cell"><div class="placeholder"></div></div>
-      <div class="frame-cell"><div class="placeholder"></div></div>
-      <div class="frame-cell"><div class="placeholder"></div></div>
-      <div class="frame-cell"><div class="placeholder"></div></div>
-      <div class="frame-cell"><div class="placeholder"></div></div>
-    </div>
+      <!-- Phase column headers -->
+      <div class="phase-labels">
+        <div class="phase-label">MVP</div>
+        <div class="phase-label">Strike</div>
+        <div class="phase-label">Touch Down</div>
+        <div class="phase-label">Full Support</div>
+        <div class="phase-label">Mid Swing</div>
+        <div class="phase-label">Toe Off</div>
+      </div>
 
-    <!-- Row 2: Stride 2 -->
-    <div class="row-label" id="row2-label">Stride 2</div>
-    <div class="filmstrip" id="filmstrip-row2">
-      <div class="frame-cell"><div class="placeholder"></div></div>
-      <div class="frame-cell"><div class="placeholder"></div></div>
-      <div class="frame-cell"><div class="placeholder"></div></div>
-      <div class="frame-cell"><div class="placeholder"></div></div>
-      <div class="frame-cell"><div class="placeholder"></div></div>
-      <div class="frame-cell"><div class="placeholder"></div></div>
+      <!-- Row 1: Stride 1 -->
+      <div class="row-label" id="row1-label">Stride 1</div>
+      <div class="filmstrip" id="filmstrip-row1">
+        <div class="frame-cell"><div class="placeholder"></div><div class="scan-line"></div></div>
+        <div class="frame-cell"><div class="placeholder"></div><div class="scan-line"></div></div>
+        <div class="frame-cell"><div class="placeholder"></div><div class="scan-line"></div></div>
+        <div class="frame-cell"><div class="placeholder"></div><div class="scan-line"></div></div>
+        <div class="frame-cell"><div class="placeholder"></div><div class="scan-line"></div></div>
+        <div class="frame-cell"><div class="placeholder"></div><div class="scan-line"></div></div>
+      </div>
+
+      <!-- Row 2: Stride 2 -->
+      <div class="row-label" id="row2-label">Stride 2</div>
+      <div class="filmstrip" id="filmstrip-row2">
+        <div class="frame-cell"><div class="placeholder"></div><div class="scan-line"></div></div>
+        <div class="frame-cell"><div class="placeholder"></div><div class="scan-line"></div></div>
+        <div class="frame-cell"><div class="placeholder"></div><div class="scan-line"></div></div>
+        <div class="frame-cell"><div class="placeholder"></div><div class="scan-line"></div></div>
+        <div class="frame-cell"><div class="placeholder"></div><div class="scan-line"></div></div>
+        <div class="frame-cell"><div class="placeholder"></div><div class="scan-line"></div></div>
+      </div>
+
+      <!-- Status bar -->
+      <div class="status-bar">
+        <span><span class="status-dot"></span>Analysis complete</span>
+        <span id="status-info">—</span>
+      </div>
     </div>
   </div>
 </div>
@@ -485,8 +702,10 @@
         const img     = document.createElement("img");
         img.src       = dataUrl;
         img.alt       = PHASES[i];
-        cells[i].innerHTML = "";
-        cells[i].appendChild(img);
+        // Remove placeholder but keep scan-line
+        const ph = cells[i].querySelector(".placeholder");
+        if (ph) ph.remove();
+        cells[i].insertBefore(img, cells[i].firstChild);
       } catch (e) {
         console.warn(`Failed to capture frame for ${PHASES[i]}:`, e);
       }
@@ -613,6 +832,12 @@
       console.log("Filling row 2:", cycle2);
       await fillRow(row2El, cycle2, fps);
     }
+
+    // Update status bar
+    const statusInfo = document.getElementById("status-info");
+    const dur = video.duration ? video.duration.toFixed(1) + "s" : "—";
+    const res = video.videoWidth ? `${video.videoWidth}x${video.videoHeight}` : "";
+    statusInfo.textContent = `${fps} fps  ·  ${dur}  ·  ${res}`;
   }
 
   init();
