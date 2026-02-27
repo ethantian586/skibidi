@@ -535,8 +535,8 @@
   </div>
 </div>
 
-<!-- Hidden video for frame capture -->
-<video id="hidden-video" style="display:none;" crossorigin="anonymous" preload="auto"></video>
+<!-- Hidden video for frame capture (no crossorigin — same-origin proxy) -->
+<video id="hidden-video" style="display:none;" preload="auto"></video>
 
 <script>
   const params = new URLSearchParams(window.location.search);
@@ -687,30 +687,37 @@
   }
 
   // ── Capture a single frame from the video at a given time ──
+  // Uses double-rAF + delay to ensure the decoded frame is painted.
   function captureFrame(videoEl, time) {
     return new Promise((resolve, reject) => {
-      // Clamp to valid range
-      const t = Math.max(0, Math.min(time, videoEl.duration - 0.05));
+      const t = Math.max(0.05, Math.min(time, videoEl.duration - 0.05));
+
       const timeout = setTimeout(() => {
         videoEl.removeEventListener("seeked", onSeeked);
-        reject(new Error("Seek timeout"));
-      }, 5000);
+        reject(new Error("Seek timeout at " + t.toFixed(3) + "s"));
+      }, 10000);
 
       const onSeeked = () => {
         clearTimeout(timeout);
         videoEl.removeEventListener("seeked", onSeeked);
-        // Small delay to ensure the frame is rendered
-        requestAnimationFrame(() => {
-          try {
-            const canvas = document.createElement("canvas");
-            canvas.width  = videoEl.videoWidth;
-            canvas.height = videoEl.videoHeight;
-            canvas.getContext("2d").drawImage(videoEl, 0, 0);
-            resolve(canvas.toDataURL("image/jpeg", 0.85));
-          } catch (e) {
-            reject(e);
-          }
-        });
+
+        // Wait 150ms for the decoder, then two rAF to ensure paint
+        setTimeout(() => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              try {
+                const canvas = document.createElement("canvas");
+                canvas.width  = videoEl.videoWidth;
+                canvas.height = videoEl.videoHeight;
+                canvas.getContext("2d").drawImage(videoEl, 0, 0);
+                console.log(`  ✓ Captured: requested=${t.toFixed(3)}s actual=${videoEl.currentTime.toFixed(3)}s`);
+                resolve(canvas.toDataURL("image/jpeg", 0.85));
+              } catch (e) {
+                reject(e);
+              }
+            });
+          });
+        }, 150);
       };
 
       videoEl.addEventListener("seeked", onSeeked);
@@ -806,21 +813,36 @@
       console.warn("Could not fetch analysis data:", e);
     }
 
-    // 2. Load the processed video
+    // 2. Download the FULL video as a blob, then create an object URL.
+    //    This guarantees the entire file is in memory and fully seekable —
+    //    the streaming proxy doesn't support HTTP Range requests, so
+    //    a regular <video src="…"> can only decode from the start.
+    const loadingText = document.querySelector(".loading-text");
     try {
+      loadingText.textContent = "Downloading video…";
+      const dlResp = await fetch(`/download/${jobId}`);
+      if (!dlResp.ok) throw new Error("Download HTTP " + dlResp.status);
+
+      // Read into blob
+      const videoBlob = await dlResp.blob();
+      const blobUrl   = URL.createObjectURL(videoBlob);
+
+      loadingText.textContent = "Extracting frames…";
+
       await new Promise((resolve, reject) => {
-        video.addEventListener("canplaythrough", resolve, { once: true });
-        video.addEventListener("error", () => reject(new Error("Failed to load video.")), { once: true });
-        video.src = `/download/${jobId}`;
+        video.addEventListener("loadeddata", resolve, { once: true });
+        video.addEventListener("error", () => reject(new Error("Failed to decode video.")), { once: true });
+        video.src = blobUrl;
         video.load();
       });
     } catch (err) {
+      console.error("Video load error:", err);
       showError("Failed to load the processed video.");
       return;
     }
 
-    // Wait a moment for video to become seekable
-    await new Promise(r => setTimeout(r, 800));
+    // Give the browser time to parse moov atom & build seek index
+    await new Promise(r => setTimeout(r, 500));
 
     console.log(`Video loaded: ${video.duration.toFixed(2)}s, ${video.videoWidth}x${video.videoHeight}`);
 
