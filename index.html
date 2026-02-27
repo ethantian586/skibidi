@@ -439,7 +439,8 @@
   .result-player video { width: 100%; display: block; }
 
   .result-actions {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 10px;
     padding: 12px;
     border-top: 1px solid var(--border);
@@ -517,13 +518,20 @@
   }
 
   .btn-another {
-    padding: 12px 20px;
+    padding: 12px;
     background: none;
     color: var(--muted);
     border: 1px solid var(--border);
     font-family: 'Syne', sans-serif;
     font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
     transition: border-color 0.2s, color 0.2s, text-shadow 0.2s;
     white-space: nowrap;
   }
@@ -624,6 +632,12 @@
           </svg>
           Download
         </a>
+        <button class="btn-another" id="btn-another">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14m-7-7h14"/>
+          </svg>
+          New Upload
+        </button>
         <a class="btn-analysis" id="btn-analysis" href="#">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
@@ -637,7 +651,6 @@
           </svg>
           Agent Analysis
         </a>
-        <button class="btn-another" id="btn-another">New</button>
       </div>
     </div>
   </section>
