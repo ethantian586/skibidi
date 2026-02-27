@@ -8,7 +8,7 @@ Exposes a FastAPI web server with:
   GET  /download  — download processed video
   hi
 
-Deploy:
+Deploy:s
     pip install modal
     modal deploy modal_backend.py
 
